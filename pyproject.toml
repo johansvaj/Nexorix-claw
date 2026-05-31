@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agents-claw-mini"
+version = "1.0.0"
+description = "A lightweight, modular AI Agent Framework for Python"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Agents Claw Mini Team", email = "team@agents-claw-mini.dev"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "aiohttp>=3.9.0",
+    "beautifulsoup4>=4.12.0",
+    "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+all = [
+    "selenium>=4.0.0",
+    "playwright>=1.40.0",
+    "chromadb>=0.4.0",
+    "qdrant-client>=1.6.0",
+    "redis>=5.0.0",
+    "python-telegram-bot>=20.0",
+    "discord.py>=2.3.0",
+    "slack-sdk>=3.21.0",
+]
+openai = ["openai>=1.0.0"]
+anthropic = ["anthropic>=0.8.0"]
+google = ["google-generativeai>=0.3.0"]
+mistral = ["mistralai>=0.0.12"]
+cohere = ["cohere>=4.0.0"]
+groq = ["groq>=0.4.0"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/agents-claw-mini"
+Documentation = "https://agents-claw-mini.readthedocs.io"
+Repository = "https://github.com/yourusername/agents-claw-mini"
+Issues = "https://github.com/yourusername/agents-claw-mini/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
