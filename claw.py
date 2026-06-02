@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Nexcorix Claw v1.1 - AI Terminal Controller via Telegram
+Nexcorix Claw v1.2 - AI Terminal Controller via Telegram
 Conversational AI | Model Switcher | Full System Access | Free Tier Fallback
 """
 
@@ -24,6 +24,29 @@ try:
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
+    # Dummy minimal agar class NexcorixTelegramBot tetap bisa didefinisikan
+    # tanpa NameError saat parse file, meskipun library belum terinstall
+    class _DummyApp:
+        def add_handler(self, *a, **k): pass
+        def run_polling(self, *a, **k): pass
+        def stop(self): pass
+    class _DummyBuilder:
+        def token(self, t): return self
+        def build(self): return _DummyApp()
+    class Application:
+        @staticmethod
+        def builder(): return _DummyBuilder()
+    class CommandHandler:
+        def __init__(self, *a, **k): pass
+    class MessageHandler:
+        def __init__(self, *a, **k): pass
+    class filters:
+        TEXT = None
+        COMMAND = None
+    class Update:
+        ALL_TYPES = None
+    class ContextTypes:
+        DEFAULT_TYPE = None
 
 CONFIG_FILE = os.path.expanduser("~/.nexcorix_config.json")
 
@@ -72,7 +95,7 @@ def header():
         "",
         box_top(52),
         box_mid("🦂  N E X C O R I X   C L A W  🦂", 52, "center", "Y"),
-        box_mid("Conversational AI Terminal v1.1", 52, "center", "d"),
+        box_mid("Conversational AI Terminal v1.2", 52, "center", "d"),
         box_mid("Full System | Multi-Model | Chat Mode", 52, "center", "C"),
         box_bot(52),
         "",
@@ -516,11 +539,28 @@ class AIChatEngine:
         return response
 
 class NexcorixTelegramBot:
+    _active_instance = None
+    _lock = threading.Lock()
+    
     def __init__(self):
+        with NexcorixTelegramBot._lock:
+            # Hentikan instance lama kalau ada (auto-kill conflict)
+            if NexcorixTelegramBot._active_instance is not None:
+                try:
+                    NexcorixTelegramBot._active_instance.stop()
+                except Exception:
+                    pass
+                # Tunggu sebentar supaya koneksi lama lepas dari server Telegram
+                time.sleep(1.5)
+                NexcorixTelegramBot._active_instance = None
+            NexcorixTelegramBot._active_instance = self
+        
         self.cfg = load_cfg()
         self.ai = AIChatEngine()
         self.os_detector = OSDetector()
         self.application = None
+        self._thread = None
+        self._running = False
     
     def is_admin(self, user_id):
         admin_id = self.cfg.get("admin_id", "")
@@ -528,7 +568,7 @@ class NexcorixTelegramBot:
             return True
         return str(user_id) == str(admin_id)
     
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def start(self, update, context):
         user = update.effective_user
         os_info = self.os_detector.get_summary()
         model_name = ALL_MODELS.get(self.cfg.get("model", "deepseek_chat"), {}).get("name", "Unknown")
@@ -560,7 +600,7 @@ I'm your conversational AI assistant. You can:
 """
         await update.message.reply_text(welcome, parse_mode='Markdown')
     
-    async def model_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def model_cmd(self, update, context):
         model_name = ALL_MODELS.get(self.cfg.get("model", "deepseek_chat"), {}).get("name", "Unknown")
         await update.message.reply_text(
             f"🤖 **Current Model:** `{model_name}`\n\n"
@@ -568,7 +608,7 @@ I'm your conversational AI assistant. You can:
             parse_mode='Markdown'
         )
     
-    async def help_cmd(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def help_cmd(self, update, context):
         help_text = """📖 **Nexcorix Claw Help**
 
 **💬 CHAT MODE (Natural Conversation):**
@@ -609,7 +649,7 @@ I speak: English, Bahasa Indonesia, 日本語, 中文, and many more!
 """
         await update.message.reply_text(help_text, parse_mode='Markdown')
     
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_message(self, update, context):
         user = update.effective_user
         text = update.message.text
         
@@ -631,7 +671,29 @@ I speak: English, Bahasa Indonesia, 日本語, 中文, and many more!
         else:
             await update.message.reply_text(response, parse_mode='Markdown')
     
+    def stop(self):
+        """Hentikan bot dengan benar: signal stop ke application + cleanup."""
+        if not self._running or self.application is None:
+            return
+        
+        print(c("Y") + "    ⏹️ Stopping bot instance..." + c("r"))
+        try:
+            self.application.stop()
+        except Exception as e:
+            # Kalau bot belum sempat start polling, stop() bisa error — abaikan saja
+            pass
+        
+        self._running = False
+        
+        with NexcorixTelegramBot._lock:
+            if NexcorixTelegramBot._active_instance is self:
+                NexcorixTelegramBot._active_instance = None
+    
     def run(self):
+        if self._running:
+            print(c("Y") + "    ⚠️ Bot already running!" + c("r"))
+            return True
+        
         token = self.cfg.get("token", "")
         if not token:
             print(c("R") + "Telegram token not set!" + c("r"))
@@ -650,10 +712,17 @@ I speak: English, Bahasa Indonesia, 日本語, 中文, and many more!
         def start_bot():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            self.application.run_polling(allowed_updates=Update.ALL_TYPES, close_loop=False, stop_signals=None)
+            try:
+                # allowed_updates=None artinya semua jenis update (sama dengan Update.ALL_TYPES)
+                self.application.run_polling(close_loop=False, stop_signals=None)
+            except Exception as e:
+                print(c("R") + f"    Bot error: {e}" + c("r"))
+            finally:
+                self._running = False
         
-        bot_thread = threading.Thread(target=start_bot, daemon=True)
-        bot_thread.start()
+        self._thread = threading.Thread(target=start_bot, daemon=True)
+        self._thread.start()
+        self._running = True
         return True
 
 ALL_MODELS = {
@@ -867,6 +936,7 @@ def api_keys_screen():
 def main():
     OSDetector().save_to_config()
     bot_running = False
+    active_bot = None  # Simpan instance bot yang sedang jalan
     
     while True:
         clear(); print(header())
@@ -910,16 +980,28 @@ def main():
                 print(c("R") + "\n    ❌ Telegram token not set!" + c("r"))
                 time.sleep(2)
             else:
-                bot = NexcorixTelegramBot()
-                bot_running = bot.run()
+                # Hentikan bot lama kalau ada, baru start yang baru
+                if active_bot is not None:
+                    active_bot.stop()
+                    active_bot = None
+                    time.sleep(1)
+                
+                active_bot = NexcorixTelegramBot()
+                bot_running = active_bot.run()
                 if bot_running:
                     print(c("G") + "\n    ✅ Bot running in background!" + c("r"))
                 time.sleep(2)
         elif p == "7":
+            if active_bot is not None:
+                active_bot.stop()
+                active_bot = None
             bot_running = False
             print(c("Y") + "\n    ⏹️ Bot stopped" + c("r"))
             time.sleep(1)
         elif p == "8":
+            # Bersihkan bot sebelum exit
+            if active_bot is not None:
+                active_bot.stop()
             clear(); print(header())
             print(box_top(52))
             print(box_mid("👋 Goodbye!", 52, "center", "G"))
