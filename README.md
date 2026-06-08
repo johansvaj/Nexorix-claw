@@ -1,514 +1,1191 @@
+�
+￼ 
 
-readme_content = """<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=venom&height=300&color=gradient&customColorList=0,2,2,5,30&text=⚡%20NEXORIX%20CLAW&fontColor=fff&fontSize=60&desc=AI%20Terminal%20Controller%20via%20Telegram&descSize=20&descAlignY=75&animation=twinkling" />
-</p>
+�
+￼ ￼ ￼ ￼ ￼ 
 
-<!-- Animated Logo & Badges -->
-<p align="center">
-  <img src="https://img.shields.io/badge/⚡_NEXORIX-CLAW-FF00FF?style=for-the-badge&logo=gnu-bash&logoColor=white&labelColor=0D1117" alt="Nexorix Claw Logo"/>
-</p>
+�
+￼ 
 
-<p align="center">
-  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white"/></a>
-  <a href="https://core.telegram.org/bots/api"><img src="https://img.shields.io/badge/Telegram%20Bot-API-26B0DA?style=for-the-badge&logo=telegram&logoColor=white"/></a>
-  <a href="https://openrouter.ai"><img src="https://img.shields.io/badge/OpenRouter-AI%20Gateway-FF6B6B?style=for-the-badge&logo=openai&logoColor=white"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Termux%20%7C%20WSL-4ECDC4?style=for-the-badge&logo=linux&logoColor=white"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge"/></a>
-  <br>
-  <a href="#"><img src="https://img.shields.io/badge/Version-12.0-FF00FF?style=flat-square&logo=githubactions&logoColor=white"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square&logo=checkmarx&logoColor=white"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/Rating-⭐⭐⭐⭐⭐-FFD700?style=flat-square&logo=trustpilot&logoColor=white"/></a>
-</p>
-
-<!-- Animated Typing SVG -->
-<p align="center">
-  <a href="https://git.io/typing-svg">
-    <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=700&size=24&pause=800&color=FF00FF&center=true&vCenter=true&width=650&lines=🤖+AI+Terminal+Controller+via+Telegram;⚡+Multi-Platform+%7C+Multi-Model+%7C+Multi-Language;🚀+Your+Pocket+AI+Assistant;🔮+Powered+by+OpenRouter+AI+Gateway;💻+Natural+Language+System+Commands" alt="Typing Animation" />
-  </a>
-</p>
-
-<!-- Animated Divider -->
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=gradient&height=2&section=header&customColorList=0,2,2,5,30" width="100%"/>
-</p>
-
----
-
-## 📋 Table of Contents
-
-- [✨ Features](#-features)
-- [🎬 Demo](#-demo)
-- [📦 Installation](#-installation)
-  - [Linux / Debian / Ubuntu / Kali](#linux--debian--ubuntu--kali)
-  - [Termux (Android)](#termux-android)
-  - [macOS](#macos)
-  - [Windows (WSL)](#windows-wsl)
-  - [Docker](#docker)
-- [⚙️ Configuration](#️-configuration)
-- [🚀 Usage](#-usage)
-- [🛠️ Troubleshooting](#️-troubleshooting)
-- [📁 Project Structure](#-project-structure)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-
----
-
-## ✨ Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 🤖 AI Engine (OpenRouter)
-- **20+ AI Models** — OpenAI, Anthropic, Google, DeepSeek, Meta, Qwen, Mistral, Kimi, Perplexity, Microsoft, Ollama (Local)
-- **Smart Intent Detection** — Auto-detect coding, file ops, system commands
-- **Context-Aware** — OS detection for platform-specific responses
-- **Conversation Memory** — Persistent chat history per user
-- **Powered by OpenRouter** — Unified API for all major AI providers
-
-</td>
-<td width="50%">
-
-### 📁 File Manager
-- Create / Read / Write / Delete files & folders
-- Natural language commands: *"buat file test.py"*
-- Directory navigation with `cd`
-- AI-powered file operations
-- Upload & download files via Telegram
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 💻 Terminal Integration
-- OS Auto-Detection (Linux, macOS, Termux, WSL, Docker)
-- Package manager detection (apt, pacman, brew, pkg, etc.)
-- System info dashboard
-- Shell-aware command suggestions
-- Real-time command execution output
-
-</td>
-<td width="50%">
-
-### 🔒 Security
-- Admin ID restriction
-- Dangerous command filtering
-- Sandbox mode (planned)
-- Access control per Telegram user
-- Command whitelist/blacklist
-
-</td>
-</tr>
-</table>
-
-### 🌐 Multi-Platform Support
-
-| Platform | Status | Install Method |
-|----------|--------|----------------|
-| 🐧 Linux (Debian/Ubuntu/Kali) | ✅ Fully Supported | `apt` + `pip` |
-| 📱 Termux (Android) | ✅ Fully Supported | `pkg` + `pip` |
-| 🍎 macOS | ✅ Supported | `brew` + `pip` |
-| 🪟 Windows WSL | ✅ Supported | `apt` + `pip` |
-| 🐳 Docker | 🔄 Planned | `docker-compose` |
-
----
-
-## 🎬 Demo
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/AgentsClaw/AgentsClaw-Mini/main/assets/demo.gif" alt="Demo GIF" width="600"/>
-</p>
-
-> **Note:** Demo shows real-time terminal control via Telegram with AI-powered responses.
-
----
-
-## 📦 Installation
-
-### Linux / Debian / Ubuntu / Kali
-
-```bash
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install dependencies
-sudo apt install python3 python3-pip python3-venv git -y
-
+🚀 Quick Start
 # Clone repository
-git clone https://github.com/Nexorix/Nexorix-Claw.git
-cd Nexorix-Claw
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
 
-# Create virtual environment
+# Install & run
+chmod +x run.sh
+./run.sh
+📋 25+ Channel Integrations
+No
+Channel
+Status
+Credentials Diperlukan
+Cara Penggunaan
+1
+Telegram
+✅
+Bot Token (dari @BotFather), Admin ID (opsional)
+Kirim pesan ke bot, AI balas
+2
+Discord
+✅
+Discord Bot Token
+Bot merespon di channel yang diundang
+3
+WhatsApp
+🚧
+-
+Coming soon
+4
+Slack
+✅
+Slack Bot Token (OAuth)
+Bot membalas mention
+5
+Matrix
+✅
+Homeserver URL + Access Token
+Kirim pesan ke room
+6
+Microsoft Teams
+✅
+Webhook URL atau Bot Framework
+Kirim pesan ke channel
+7
+Gmail
+✅
+OAuth 2.0 (credentials.json)
+Baca/kirim email via command
+8
+Google Calendar
+✅
+OAuth 2.0
+Buat/edit event
+9
+Google Drive
+✅
+OAuth 2.0
+Upload/download file
+10
+Dropbox
+✅
+Dropbox Access Token
+Manajemen file
+11
+GitHub
+✅
+GitHub Personal Access Token
+Akses repo, issue, PR
+12
+GitLab
+✅
+Private Token + URL
+Akses project
+13
+Notion
+✅
+Integration Token
+Baca/tulis halaman
+14
+Trello
+✅
+API Key + Token
+Manajemen board/card
+15
+Jira
+✅
+Server URL + Email + API Token
+Akses issue
+16
+Airtable
+✅
+Personal Access Token
+Baca/tulis base
+17
+Google Sheets
+✅
+OAuth 2.0
+Baca/tulis spreadsheet
+18
+PostgreSQL
+✅
+Host, port, user, pass, db
+Query database
+19
+MySQL
+✅
+Host, port, user, pass, db
+Query database
+20
+MongoDB
+✅
+MongoDB URI
+Query NoSQL
+21
+Redis
+✅
+Host, port, password
+Perintah Redis
+22
+Webhook
+✅
+Port (default 5000)
+Terima POST, balas AI
+23
+MQTT
+✅
+Broker, port
+Subscribe/topik, aksi IoT
+24
+REST API
+✅
+Endpoint custom (gunakan webhook)
+-
+25
+MCP Servers
+✅
+Model Context Protocol
+Implementasi kustom
+🛠️ Instalasi Detail
+Prerequisites
+Python 3.9+
+pip
+Git
+Linux/Mac/Termux/WSL
+Step-by-step
+# 1. Clone repository
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
+
+# 2. Buat virtual environment (opsional tapi direkomendasikan)
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
-# Install requirements
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Configure (see Configuration section)
-cp config.example.json config.json
-nano config.json
+# 4. Setup environment variables / config
+# Pertama kali run, script akan membuat ~/.nexcorix_config.json
+# Atau edit langsung:
+cp .env.example .env
+# Edit .env sesuai channel yang mau diaktifkan
 
-# Run
-python3 main.py
-```
-
-### Termux (Android)
-
-```bash
-# Update packages
-pkg update && pkg upgrade -y
-
-# Install dependencies
-pkg install python git -y
-
-# Clone repository
-git clone https://github.com/Nexorix/Nexorix-Claw.git
-cd Nexorix-Claw
-
-# Install requirements
-pip install -r requirements.txt
-
-# Configure
-cp config.example.json config.json
-nano config.json
-
-# Run
-python main.py
-```
-
-### macOS
-
-```bash
-# Install Homebrew (if not installed)
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install dependencies
-brew install python3 git
-
-# Clone repository
-git clone https://github.com/Nexorix/Nexorix-Claw.git
-cd Nexorix-Claw
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install requirements
-pip install -r requirements.txt
-
-# Configure
-cp config.example.json config.json
-nano config.json
-
-# Run
-python3 main.py
-```
-
-### Windows (WSL)
-
-```bash
-# Open WSL terminal
-wsl
-
-# Follow Linux installation steps above
-sudo apt update && sudo apt install python3 python3-pip git -y
-# ... (same as Linux)
-```
-
-### Docker
-
-```bash
-# Coming soon
-docker-compose up -d
-```
-
----
-
-## ⚙️ Configuration
-
-### 1. Get OpenRouter API Key
-
-1. Visit [OpenRouter](https://openrouter.ai)
-2. Sign up / Log in
-3. Go to **Keys** → **Create Key**
-4. Copy your API key
-
-### 2. Get Telegram Bot Token
-
-1. Message [@BotFather](https://t.me/BotFather) on Telegram
-2. Send `/newbot`
-3. Follow instructions to create bot
-4. Copy the **Bot Token**
-
-### 3. Get Your Telegram User ID
-
-1. Message [@userinfobot](https://t.me/userinfobot)
-2. Copy your **User ID**
-
-### 4. Edit `config.json`
-
-```json
+# 5. Jalankan
+python3 nexcorix_claw.py
+# atau pakai run.sh
+chmod +x run.sh
+./run.sh
+🔧 Konfigurasi ~/.nexcorix_config.json
+File config otomatis dibuat saat pertama kali run. Contoh isi:
 {
-  "telegram": {
-    "bot_token": "YOUR_BOT_TOKEN_HERE",
-    "admin_id": 123456789,
-    "allowed_users": [123456789]
-  },
-  "openrouter": {
-    "api_key": "YOUR_OPENROUTER_API_KEY_HERE",
-    "model": "anthropic/claude-3.5-sonnet",
-    "fallback_models": [
-      "openai/gpt-4o",
-      "google/gemini-pro-1.5",
-      "deepseek/deepseek-chat"
-    ],
-    "max_tokens": 4096,
-    "temperature": 0.7
-  },
-  "system": {
-    "auto_detect_os": true,
-    "dangerous_commands_filter": true,
-    "conversation_memory": true,
-    "max_history": 50,
-    "language": "auto"
-  },
-  "features": {
-    "file_manager": true,
-    "terminal_integration": true,
-    "system_info": true,
-    "upload_download": true
-  }
+  "provider": "openrouter",
+  "model": "openai/gpt-4o",
+  "fallback_model": "deepseek/deepseek-chat",
+  "openrouter_key": "sk-or-v1-xxxxxxxx",
+  "openai_key": "",
+  "anthropic_key": "",
+  "google_key": "",
+  "deepseek_key": "",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "context_window": "auto",
+  "performance": "balanced",
+  "admin_id": "123456789",
+  "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+  "base_url": "https://openrouter.ai/api/v1",
+  "ollama_url": "http://localhost:11434",
+  "custom_api_url": "",
+  "custom_api_key": "",
+  "chat_history": {},
+  "channels": {}
 }
-```
+🎮 Cara Menggunakan
+Mode Chat (Menu 2)
+You: install nmap
+Nexcorix: OK nmap via apt
+...
 
-### Available OpenRouter Models
+You: scan network
+Nexcorix: [hasil scan nmap]
 
-| Model | ID | Best For |
-|-------|-----|----------|
-| Claude 3.5 Sonnet | `anthropic/claude-3.5-sonnet` | Coding, reasoning |
-| GPT-4o | `openai/gpt-4o` | General purpose |
-| Gemini Pro 1.5 | `google/gemini-pro-1.5` | Long context |
-| DeepSeek V3 | `deepseek/deepseek-chat` | Cost-effective |
-| Llama 3.1 70B | `meta-llama/llama-3.1-70b-instruct` | Open source |
-| Qwen 2.5 72B | `qwen/qwen-2.5-72b-instruct` | Multilingual |
-| Mistral Large | `mistralai/mistral-large` | European languages |
-| Kimi K2 | `moonshotai/kimi-k2` | Chinese context |
-| Perplexity Sonar | `perplexity/sonar` | Web search |
-| Ollama (Local) | `ollama/llama3.1` | Privacy-focused |
+You: create file test.py print("hello")
+Nexcorix: File 'test.py' created!
 
-> **Full list:** [OpenRouter Models](https://openrouter.ai/models)
+You: browse google.com
+Nexcorix: [konten halaman]
 
----
+You: search "python tutorial"
+Nexcorix: [hasil DuckDuckGo]
 
-## 🚀 Usage
+You: run ls -la
+Nexcorix: [output command]
 
-### Start the Bot
+You: web server mysite 8080
+Nexcorix: Web Server Started! URL: http://192.168.1.5:8080
+Perintah Langsung yang Didukung
+Perintah
+Deskripsi
+install <package>
+Install via package manager
+github <tool>
+Install dari GitHub
+pip <package>
+Install via pip3
+scan network [target]
+Scan jaringan (nmap/arp-scan)
+scan ports <target> [ports]
+Scan port
+wifi scan
+Scan WiFi
+browse <url>
+Buka website
+search <query>
+Cari DuckDuckGo
+create file <name> [content]
+Buat file
+create folder <name>
+Buat folder
+delete <name>
+Hapus file/folder
+read file <name>
+Baca file
+list files
+List direktori
+cd <path>
+Ganti direktori
+run <command>
+Jalankan command
+web server [folder] [port]
+Start HTTP server
+update system
+Update package repos
+🤖 100+ AI Models (15+ Providers)
+Provider
+Models
+OpenAI
+gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, o3-mini
+Anthropic
+claude-3.5-sonnet, claude-3-opus, claude-3-sonnet, claude-3-haiku
+Google
+gemini-1.5-pro, gemini-1.5-flash, gemini-1.0-pro, gemma-2-9b, gemma-2-27b
+DeepSeek
+deepseek-chat, deepseek-coder
+Meta
+llama-3.1-405b, llama-3.1-70b, llama-3.1-8b, llama-3-70b, llama-3-8b
+Mistral
+mistral-large, mistral-medium, mixtral-8x7b, mistral-7b, codestral-22b, mathstral-7b
+Qwen
+qwen-2.5-72b, qwen-2.5-32b, qwen-2.5-14b, qwen-2-7b
+xAI
+grok-2, grok-1, grok-beta
+Cohere
+command-r-plus, command-r
+AI21
+jamba-1.5
+Databricks
+dbrx-instruct
+Upstage
+solar-10.7b
+NVIDIA
+nemotron-4-340b
+Perplexity
+pplx-7b-online
+Moonshot
+kimi-v1
+🖥️ Menu Utama
+╔══════════════════════════════════════════════════════════╗
+║ 🦂       N E X C O R I X   C L A W   v4.0       🦂 ║
+╠══════════════════════════════════════════════════════════╣
+║  Integrations                                            ║
+║    ├─ Discord      ├─ Telegram    ├─ WhatsApp         ║
+║    ├─ Slack        ├─ Matrix      ├─ Microsoft Teams  ║
+║    ├─ Gmail        ├─ Google Calendar                  ║
+║    ├─ Google Drive ├─ Dropbox     ├─ GitHub            ║
+║    ├─ GitLab       ├─ Notion      ├─ Trello          ║
+║    ├─ Jira         ├─ Airtable    ├─ Google Sheets    ║
+║    ├─ PostgreSQL   ├─ MySQL       ├─ MongoDB          ║
+║    ├─ Redis        ├─ n8n         ├─ Zapier           ║
+║    ├─ Make         ├─ Home Assistant                   ║
+║    ├─ MQTT         ├─ Webhook     ├─ REST API        ║
+║    └─ MCP Servers  🚧 Soon                             ║
+╠══════════════════════════════════════════════════════════╣
+║        N E X C O R I X   M E N U                       ║
+╠══════════════════════════════════════════════════════════╣
+║  [1] Dashboard        [11] Workspace                   ║
+║  [2] Chat             [12] API Keys                    ║
+║  [3] Models           [13] Logs                        ║
+║  [4] Agents           [14] Monitoring                  ║
+║  [5] Memory           [15] Security                    ║
+║  [6] Skills           [16] Backup                      ║
+║  [7] Tools            [17] Updates                     ║
+║  [8] Channels         [18] Settings                    ║
+║  [9] Automation       [19] About                       ║
+║  [10] Sandbox         [20] Exit                        ║
+╚══════════════════════════════════════════════════════════╝
+📁 Struktur Project
+nexcorix-claw/
+├── 📄 nexcorix_claw.py      # Main script
+├── 📄 run.sh                # Auto-install & run
+├── 📄 requirements.txt      # Dependencies
+├── 📄 .env.example          # Environment template
+├── 📄 README.md             # This file
+├── 📁 channels/             # Channel adapters (opsional)
+│   ├── telegram.py
+│   ├── discord.py
+│   └── ...
+├── 📁 integrations/         # API integrations
+│   ├── google/
+│   ├── database/
+│   └── ...
+└── 📁 assets/               # Logo, GIF, media
+    └── logo.gif
+⚡ Features
+✅ Auto-Install Libraries — pip install otomatis saat import gagal
+✅ 100+ AI Models — 15+ provider (OpenAI, Anthropic, Google, DeepSeek, dll)
+✅ 25+ Channel Integrations — Telegram, Discord, Slack, Matrix, dll
+✅ System Executor — Jalankan command shell dengan timeout
+✅ Advanced Installer — Install tools via apt/yum/pacman/brew/pip/GitHub
+✅ File Manager — Create, read, delete, list files & folders
+✅ Network Scanner — nmap, arp-scan, port scan, wifi scan
+✅ Local Browser — Browse website & DuckDuckGo search tanpa browser
+✅ Web Server — Start HTTP server instan
+✅ OS Detector — Auto-detect Linux distro, WSL, Termux, Docker
+✅ Multi-Provider Fallback — Ganti model otomatis jika gagal
+✅ Chat History — Simpan percakapan di config
+✅ Admin Security — Telegram admin ID filter
+✅ Interactive Menu — TUI dengan warna & box drawing
+📝 Catatan Penting
+Status
+Arti
+✅
+Sudah tersedia & stabil
+🚧
+Dalam pengembangan / placeholder
+WhatsApp: Memerlukan konfigurasi tambahan (pywhatsapp)
+Google services: Memerlukan OAuth 2.0 setup (credentials.json)
+Database adapters: Memerlukan koneksi valid, auto-install library
+MCP Servers: Implementasi kustom sesuai kebutuhan
+🔒 Security
+Semua command dijalankan dengan timeout (default 300s)
+Admin ID filter untuk Telegram
+Sandbox mode — perintah berjalan di home directory
+API keys disimpan di ~/.nexcorix_config.json (chmod 600 direkomendasikan)
+🐛 Troubleshooting
+# Permission denied
+chmod +x run.sh
+chmod 600 ~/.nexcorix_config.json
 
-```bash
-# With virtual environment
-source venv/bin/activate
-python3 main.py
+# Module not found
+pip install -r requirements.txt
+# atau biarkan auto-install saat run
 
-# Or using systemd (Linux)
-sudo systemctl enable nexorix-claw
-sudo systemctl start nexorix-claw
-```
+# Telegram bot tidak merespon
+# Pastikan token valid dan bot tidak di-block
 
-### Telegram Commands
+# API key invalid
+# Cek di Settings → Test AI Connections (menu 12)
+📜 License
+MIT License — bebas modifikasi & distribusi.
+�
+￼ 
 
-| Command | Description |
-|---------|-------------|
-| `/start` | Start bot & show menu |
-| `/help` | Show all commands |
-| `/ai <prompt>` | Ask AI anything |
-| `/cmd <command>` | Execute terminal command |
-| `/file` | File manager menu |
-| `/sys` | System info dashboard |
-| `/model` | Change AI model |
-| `/history` | View conversation history |
-| `/clear` | Clear chat history |
-| `/status` | Bot status & uptime |
+�
+￼ 
 
-### Natural Language Examples
+�
+Made with ❤️ by Nexcorix Team
+�
+￼ 
 
-```
-💬 "buat file hello.py dengan isi print('Hello World')"
-💬 "install package numpy"
-💬 "tampilkan info sistem"
-💬 "cd /home && ls -la"
-💬 "buat folder project baru"
-```
+�
+￼ ￼ ￼ ￼ ￼ 
 
-### AI-Powered Features
+�
+￼ 
 
-```
-🤖 "buat script python untuk download gambar dari URL"
-🤖 "debug error ini: [paste error]"
-🤖 "convert json ke csv"
-🤖 "buat dockerfile untuk flask app"
-🤖 "optimize query SQL ini"
-```
+🚀 Quick Start
+# Clone repository
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
 
----
+# Install & run
+chmod +x run.sh
+./run.sh
+📋 25+ Channel Integrations
+No
+Channel
+Status
+Credentials Diperlukan
+Cara Penggunaan
+1
+Telegram
+✅
+Bot Token (dari @BotFather), Admin ID (opsional)
+Kirim pesan ke bot, AI balas
+2
+Discord
+✅
+Discord Bot Token
+Bot merespon di channel yang diundang
+3
+WhatsApp
+🚧
+-
+Coming soon
+4
+Slack
+✅
+Slack Bot Token (OAuth)
+Bot membalas mention
+5
+Matrix
+✅
+Homeserver URL + Access Token
+Kirim pesan ke room
+6
+Microsoft Teams
+✅
+Webhook URL atau Bot Framework
+Kirim pesan ke channel
+7
+Gmail
+✅
+OAuth 2.0 (credentials.json)
+Baca/kirim email via command
+8
+Google Calendar
+✅
+OAuth 2.0
+Buat/edit event
+9
+Google Drive
+✅
+OAuth 2.0
+Upload/download file
+10
+Dropbox
+✅
+Dropbox Access Token
+Manajemen file
+11
+GitHub
+✅
+GitHub Personal Access Token
+Akses repo, issue, PR
+12
+GitLab
+✅
+Private Token + URL
+Akses project
+13
+Notion
+✅
+Integration Token
+Baca/tulis halaman
+14
+Trello
+✅
+API Key + Token
+Manajemen board/card
+15
+Jira
+✅
+Server URL + Email + API Token
+Akses issue
+16
+Airtable
+✅
+Personal Access Token
+Baca/tulis base
+17
+Google Sheets
+✅
+OAuth 2.0
+Baca/tulis spreadsheet
+18
+PostgreSQL
+✅
+Host, port, user, pass, db
+Query database
+19
+MySQL
+✅
+Host, port, user, pass, db
+Query database
+20
+MongoDB
+✅
+MongoDB URI
+Query NoSQL
+21
+Redis
+✅
+Host, port, password
+Perintah Redis
+22
+Webhook
+✅
+Port (default 5000)
+Terima POST, balas AI
+23
+MQTT
+✅
+Broker, port
+Subscribe/topik, aksi IoT
+24
+REST API
+✅
+Endpoint custom (gunakan webhook)
+-
+25
+MCP Servers
+✅
+Model Context Protocol
+Implementasi kustom
+🛠️ Instalasi Detail
+Prerequisites
+Python 3.9+
+pip
+Git
+Linux/Mac/Termux/WSL
+Step-by-step
+# 1. Clone repository
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
 
-## 🛠️ Troubleshooting
+# 2. Buat virtual environment (opsional tapi direkomendasikan)
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
-### Common Issues
+# 3. Install dependencies
+pip install -r requirements.txt
 
-| Issue | Solution |
-|-------|----------|
-| `ModuleNotFoundError` | Run `pip install -r requirements.txt` |
-| `Invalid bot token` | Check token with @BotFather |
-| `OpenRouter 401` | Verify API key at openrouter.ai |
-| `Permission denied` | Run with `sudo` or check file permissions |
-| `Command not found` | Ensure binary is in PATH |
-| `Telegram timeout` | Check internet connection |
+# 4. Setup environment variables / config
+# Pertama kali run, script akan membuat ~/.nexcorix_config.json
+# Atau edit langsung:
+cp .env.example .env
+# Edit .env sesuai channel yang mau diaktifkan
 
-### Logs & Debug
+# 5. Jalankan
+python3 nexcorix_claw.py
+# atau pakai run.sh
+chmod +x run.sh
+./run.sh
+🔧 Konfigurasi ~/.nexcorix_config.json
+File config otomatis dibuat saat pertama kali run. Contoh isi:
+{
+  "provider": "openrouter",
+  "model": "openai/gpt-4o",
+  "fallback_model": "deepseek/deepseek-chat",
+  "openrouter_key": "sk-or-v1-xxxxxxxx",
+  "openai_key": "",
+  "anthropic_key": "",
+  "google_key": "",
+  "deepseek_key": "",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "context_window": "auto",
+  "performance": "balanced",
+  "admin_id": "123456789",
+  "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+  "base_url": "https://openrouter.ai/api/v1",
+  "ollama_url": "http://localhost:11434",
+  "custom_api_url": "",
+  "custom_api_key": "",
+  "chat_history": {},
+  "channels": {}
+}
+🎮 Cara Menggunakan
+Mode Chat (Menu 2)
+You: install nmap
+Nexcorix: OK nmap via apt
+...
 
-```bash
-# View logs
-tail -f logs/nexorix-claw.log
+You: scan network
+Nexcorix: [hasil scan nmap]
 
-# Debug mode
-python3 main.py --debug
+You: create file test.py print("hello")
+Nexcorix: File 'test.py' created!
 
-# Verbose output
-python3 main.py -v
-```
+You: browse google.com
+Nexcorix: [konten halaman]
 
-### Support
+You: search "python tutorial"
+Nexcorix: [hasil DuckDuckGo]
 
-- 📧 Email: support@nexorix.dev
-- 💬 Telegram: [@NexorixSupport](https://t.me/NexorixSupport)
-- 🐛 Issues: [GitHub Issues](https://github.com/Nexorix/Nexorix-Claw/issues)
+You: run ls -la
+Nexcorix: [output command]
 
----
+You: web server mysite 8080
+Nexcorix: Web Server Started! URL: http://192.168.1.5:8080
+Perintah Langsung yang Didukung
+Perintah
+Deskripsi
+install <package>
+Install via package manager
+github <tool>
+Install dari GitHub
+pip <package>
+Install via pip3
+scan network [target]
+Scan jaringan (nmap/arp-scan)
+scan ports <target> [ports]
+Scan port
+wifi scan
+Scan WiFi
+browse <url>
+Buka website
+search <query>
+Cari DuckDuckGo
+create file <name> [content]
+Buat file
+create folder <name>
+Buat folder
+delete <name>
+Hapus file/folder
+read file <name>
+Baca file
+list files
+List direktori
+cd <path>
+Ganti direktori
+run <command>
+Jalankan command
+web server [folder] [port]
+Start HTTP server
+update system
+Update package repos
+🤖 100+ AI Models (15+ Providers)
+Provider
+Models
+OpenAI
+gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, o3-mini
+Anthropic
+claude-3.5-sonnet, claude-3-opus, claude-3-sonnet, claude-3-haiku
+Google
+gemini-1.5-pro, gemini-1.5-flash, gemini-1.0-pro, gemma-2-9b, gemma-2-27b
+DeepSeek
+deepseek-chat, deepseek-coder
+Meta
+llama-3.1-405b, llama-3.1-70b, llama-3.1-8b, llama-3-70b, llama-3-8b
+Mistral
+mistral-large, mistral-medium, mixtral-8x7b, mistral-7b, codestral-22b, mathstral-7b
+Qwen
+qwen-2.5-72b, qwen-2.5-32b, qwen-2.5-14b, qwen-2-7b
+xAI
+grok-2, grok-1, grok-beta
+Cohere
+command-r-plus, command-r
+AI21
+jamba-1.5
+Databricks
+dbrx-instruct
+Upstage
+solar-10.7b
+NVIDIA
+nemotron-4-340b
+Perplexity
+pplx-7b-online
+Moonshot
+kimi-v1
+🖥️ Menu Utama
+╔══════════════════════════════════════════════════════════╗
+║ 🦂       N E X C O R I X   C L A W   v4.0       🦂 ║
+╠══════════════════════════════════════════════════════════╣
+║  Integrations                                            ║
+║    ├─ Discord      ├─ Telegram    ├─ WhatsApp         ║
+║    ├─ Slack        ├─ Matrix      ├─ Microsoft Teams  ║
+║    ├─ Gmail        ├─ Google Calendar                  ║
+║    ├─ Google Drive ├─ Dropbox     ├─ GitHub            ║
+║    ├─ GitLab       ├─ Notion      ├─ Trello          ║
+║    ├─ Jira         ├─ Airtable    ├─ Google Sheets    ║
+║    ├─ PostgreSQL   ├─ MySQL       ├─ MongoDB          ║
+║    ├─ Redis        ├─ n8n         ├─ Zapier           ║
+║    ├─ Make         ├─ Home Assistant                   ║
+║    ├─ MQTT         ├─ Webhook     ├─ REST API        ║
+║    └─ MCP Servers  🚧 Soon                             ║
+╠══════════════════════════════════════════════════════════╣
+║        N E X C O R I X   M E N U                       ║
+╠══════════════════════════════════════════════════════════╣
+║  [1] Dashboard        [11] Workspace                   ║
+║  [2] Chat             [12] API Keys                    ║
+║  [3] Models           [13] Logs                        ║
+║  [4] Agents           [14] Monitoring                  ║
+║  [5] Memory           [15] Security                    ║
+║  [6] Skills           [16] Backup                      ║
+║  [7] Tools            [17] Updates                     ║
+║  [8] Channels         [18] Settings                    ║
+║  [9] Automation       [19] About                       ║
+║  [10] Sandbox         [20] Exit                        ║
+╚══════════════════════════════════════════════════════════╝
+📁 Struktur Project
+nexcorix-claw/
+├── 📄 nexcorix_claw.py      # Main script
+├── 📄 run.sh                # Auto-install & run
+├── 📄 requirements.txt      # Dependencies
+├── 📄 .env.example          # Environment template
+├── 📄 README.md             # This file
+├── 📁 channels/             # Channel adapters (opsional)
+│   ├── telegram.py
+│   ├── discord.py
+│   └── ...
+├── 📁 integrations/         # API integrations
+│   ├── google/
+│   ├── database/
+│   └── ...
+└── 📁 assets/               # Logo, GIF, media
+    └── logo.gif
+⚡ Features
+✅ Auto-Install Libraries — pip install otomatis saat import gagal
+✅ 100+ AI Models — 15+ provider (OpenAI, Anthropic, Google, DeepSeek, dll)
+✅ 25+ Channel Integrations — Telegram, Discord, Slack, Matrix, dll
+✅ System Executor — Jalankan command shell dengan timeout
+✅ Advanced Installer — Install tools via apt/yum/pacman/brew/pip/GitHub
+✅ File Manager — Create, read, delete, list files & folders
+✅ Network Scanner — nmap, arp-scan, port scan, wifi scan
+✅ Local Browser — Browse website & DuckDuckGo search tanpa browser
+✅ Web Server — Start HTTP server instan
+✅ OS Detector — Auto-detect Linux distro, WSL, Termux, Docker
+✅ Multi-Provider Fallback — Ganti model otomatis jika gagal
+✅ Chat History — Simpan percakapan di config
+✅ Admin Security — Telegram admin ID filter
+✅ Interactive Menu — TUI dengan warna & box drawing
+📝 Catatan Penting
+Status
+Arti
+✅�
+￼ 
 
-## 📁 Project Structure
+�
+￼ ￼ ￼ ￼ ￼ 
 
-```
-Nexorix-Claw/
-├── 📄 main.py                 # Entry point
-├── 📁 bot/
-│   ├── __init__.py
-│   ├── telegram_bot.py        # Telegram bot handler
-│   ├── ai_engine.py           # OpenRouter AI integration
-│   ├── file_manager.py        # File operations
-│   ├── terminal.py            # Terminal command execution
-│   ├── security.py            # Access control & filtering
-│   ├── system_info.py         # OS detection & info
-│   └── memory.py              # Conversation history
-├── 📁 config/
-│   ├── config.json            # User configuration
-│   └── config.example.json    # Example config
-├── 📁 logs/
-│   └── nexorix-claw.log       # Runtime logs
-├── 📁 assets/
-│   └── demo.gif               # Demo media
-├── 📄 requirements.txt        # Python dependencies
-├── 📄 Dockerfile              # Docker config
-├── 📄 docker-compose.yml      # Docker Compose
-├── 📄 LICENSE                 # MIT License
-└── 📄 README.md               # This file
-```
+�
+￼ 
 
----
+🚀 Quick Start
+# Clone repository
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
 
-## 🤝 Contributing
+# Install & run
+chmod +x run.sh
+./run.sh
+📋 25+ Channel Integrations
+No
+Channel
+Status
+Credentials Diperlukan
+Cara Penggunaan
+1
+Telegram
+✅
+Bot Token (dari @BotFather), Admin ID (opsional)
+Kirim pesan ke bot, AI balas
+2
+Discord
+✅
+Discord Bot Token
+Bot merespon di channel yang diundang
+3
+WhatsApp
+🚧
+-
+Coming soon
+4
+Slack
+✅
+Slack Bot Token (OAuth)
+Bot membalas mention
+5
+Matrix
+✅
+Homeserver URL + Access Token
+Kirim pesan ke room
+6
+Microsoft Teams
+✅
+Webhook URL atau Bot Framework
+Kirim pesan ke channel
+7
+Gmail
+✅
+OAuth 2.0 (credentials.json)
+Baca/kirim email via command
+8
+Google Calendar
+✅
+OAuth 2.0
+Buat/edit event
+9
+Google Drive
+✅
+OAuth 2.0
+Upload/download file
+10
+Dropbox
+✅
+Dropbox Access Token
+Manajemen file
+11
+GitHub
+✅
+GitHub Personal Access Token
+Akses repo, issue, PR
+12
+GitLab
+✅
+Private Token + URL
+Akses project
+13
+Notion
+✅
+Integration Token
+Baca/tulis halaman
+14
+Trello
+✅
+API Key + Token
+Manajemen board/card
+15
+Jira
+✅
+Server URL + Email + API Token
+Akses issue
+16
+Airtable
+✅
+Personal Access Token
+Baca/tulis base
+17
+Google Sheets
+✅
+OAuth 2.0
+Baca/tulis spreadsheet
+18
+PostgreSQL
+✅
+Host, port, user, pass, db
+Query database
+19
+MySQL
+✅
+Host, port, user, pass, db
+Query database
+20
+MongoDB
+✅
+MongoDB URI
+Query NoSQL
+21
+Redis
+✅
+Host, port, password
+Perintah Redis
+22
+Webhook
+✅
+Port (default 5000)
+Terima POST, balas AI
+23
+MQTT
+✅
+Broker, port
+Subscribe/topik, aksi IoT
+24
+REST API
+✅
+Endpoint custom (gunakan webhook)
+-
+25
+MCP Servers
+✅
+Model Context Protocol
+Implementasi kustom
+🛠️ Instalasi Detail
+Prerequisites
+Python 3.9+
+pip
+Git
+Linux/Mac/Termux/WSL
+Step-by-step
+# 1. Clone repository
+git clone https://github.com/user/nexcorix-claw.git
+cd nexcorix-claw
 
-We welcome contributions! Please follow these steps:
+# 2. Buat virtual environment (opsional tapi direkomendasikan)
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
-1. **Fork** the repository
-2. **Clone** your fork
-3. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-4. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-5. **Push** to the branch (`git push origin feature/amazing-feature`)
-6. **Open** a Pull Request
+# 3. Install dependencies
+pip install -r requirements.txt
 
-### Development Setup
+# 4. Setup environment variables / config
+# Pertama kali run, script akan membuat ~/.nexcorix_config.json
+# Atau edit langsung:
+cp .env.example .env
+# Edit .env sesuai channel yang mau diaktifkan
 
-```bash
-# Install dev dependencies
-pip install -r requirements-dev.txt
+# 5. Jalankan
+python3 nexcorix_claw.py
+# atau pakai run.sh
+chmod +x run.sh
+./run.sh
+🔧 Konfigurasi ~/.nexcorix_config.json
+File config otomatis dibuat saat pertama kali run. Contoh isi:
+{
+  "provider": "openrouter",
+  "model": "openai/gpt-4o",
+  "fallback_model": "deepseek/deepseek-chat",
+  "openrouter_key": "sk-or-v1-xxxxxxxx",
+  "openai_key": "",
+  "anthropic_key": "",
+  "google_key": "",
+  "deepseek_key": "",
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "context_window": "auto",
+  "performance": "balanced",
+  "admin_id": "123456789",
+  "token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+  "base_url": "https://openrouter.ai/api/v1",
+  "ollama_url": "http://localhost:11434",
+  "custom_api_url": "",
+  "custom_api_key": "",
+  "chat_history": {},
+  "channels": {}
+}
+🎮 Cara Menggunakan
+Mode Chat (Menu 2)
+You: install nmap
+Nexcorix: OK nmap via apt
+...
 
-# Run tests
-pytest tests/
+You: scan network
+Nexcorix: [hasil scan nmap]
 
-# Code formatting
-black bot/
-flake8 bot/
-```
+You: create file test.py print("hello")
+Nexcorix: File 'test.py' created!
 
-### Contributors
+You: browse google.com
+Nexcorix: [konten halaman]
 
-<a href="https://github.com/Nexorix/Nexorix-Claw/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Nexorix/Nexorix-Claw" />
-</a>
+You: search "python tutorial"
+Nexcorix: [hasil DuckDuckGo]
 
----
+You: run ls -la
+Nexcorix: [output command]
 
-## 📜 License
+You: web server mysite 8080
+Nexcorix: Web Server Started! URL: http://192.168.1.5:8080
+Perintah Langsung yang Didukung
+Perintah
+Deskripsi
+install <package>
+Install via package manager
+github <tool>
+Install dari GitHub
+pip <package>
+Install via pip3
+scan network [target]
+Scan jaringan (nmap/arp-scan)
+scan ports <target> [ports]
+Scan port
+wifi scan
+Scan WiFi
+browse <url>
+Buka website
+search <query>
+Cari DuckDuckGo
+create file <name> [content]
+Buat file
+create folder <name>
+Buat folder
+delete <name>
+Hapus file/folder
+read file <name>
+Baca file
+list files
+List direktori
+cd <path>
+Ganti direktori
+run <command>
+Jalankan command
+web server [folder] [port]
+Start HTTP server
+update system
+Update package repos
+🤖 100+ AI Models (15+ Providers)
+Provider
+Models
+OpenAI
+gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo, o1-preview, o1-mini, o3-mini
+Anthropic
+claude-3.5-sonnet, claude-3-opus, claude-3-sonnet, claude-3-haiku
+Google
+gemini-1.5-pro, gemini-1.5-flash, gemini-1.0-pro, gemma-2-9b, gemma-2-27b
+DeepSeek
+deepseek-chat, deepseek-coder
+Meta
+llama-3.1-405b, llama-3.1-70b, llama-3.1-8b, llama-3-70b, llama-3-8b
+Mistral
+mistral-large, mistral-medium, mixtral-8x7b, mistral-7b, codestral-22b, mathstral-7b
+Qwen
+qwen-2.5-72b, qwen-2.5-32b, qwen-2.5-14b, qwen-2-7b
+xAI
+grok-2, grok-1, grok-beta
+Cohere
+command-r-plus, command-r
+AI21
+jamba-1.5
+Databricks
+dbrx-instruct
+Upstage
+solar-10.7b
+NVIDIA
+nemotron-4-340b
+Perplexity
+pplx-7b-online
+Moonshot
+kimi-v1
+🖥️ Menu Utama
+╔══════════════════════════════════════════════════════════╗
+║ 🦂       N E X C O R I X   C L A W   v4.0       🦂 ║
+╠══════════════════════════════════════════════════════════╣
+║  Integrations                                            ║
+║    ├─ Discord      ├─ Telegram    ├─ WhatsApp         ║
+║    ├─ Slack        ├─ Matrix      ├─ Microsoft Teams  ║
+║    ├─ Gmail        ├─ Google Calendar                  ║
+║    ├─ Google Drive ├─ Dropbox     ├─ GitHub            ║
+║    ├─ GitLab       ├─ Notion      ├─ Trello          ║
+║    ├─ Jira         ├─ Airtable    ├─ Google Sheets    ║
+║    ├─ PostgreSQL   ├─ MySQL       ├─ MongoDB          ║
+║    ├─ Redis        ├─ n8n         ├─ Zapier           ║
+║    ├─ Make         ├─ Home Assistant                   ║
+║    ├─ MQTT         ├─ Webhook     ├─ REST API        ║
+║    └─ MCP Servers  🚧 Soon                             ║
+╠══════════════════════════════════════════════════════════╣
+║        N E X C O R I X   M E N U                       ║
+╠══════════════════════════════════════════════════════════╣
+║  [1] Dashboard        [11] Workspace                   ║
+║  [2] Chat             [12] API Keys                    ║
+║  [3] Models           [13] Logs                        ║
+║  [4] Agents           [14] Monitoring                  ║
+║  [5] Memory           [15] Security                    ║
+║  [6] Skills           [16] Backup                      ║
+║  [7] Tools            [17] Updates                     ║
+║  [8] Channels         [18] Settings                    ║
+║  [9] Automation       [19] About                       ║
+║  [10] Sandbox         [20] Exit                        ║
+╚══════════════════════════════════════════════════════════╝
+📁 Struktur Project
+nexcorix-claw/
+├── 📄 nexcorix_claw.py      # Main script
+├── 📄 run.sh                # Auto-install & run
+├── 📄 requirements.txt      # Dependencies
+├── 📄 .env.example          # Environment template
+├── 📄 README.md             # This file
+├── 📁 channels/             # Channel adapters (opsional)
+│   ├── telegram.py
+│   ├── discord.py
+│   └── ...
+├── 📁 integrations/         # API integrations
+│   ├── google/
+│   ├── database/
+│   └── ...
+└── 📁 assets/               # Logo, GIF, media
+    └── logo.gif
+⚡ Features
+✅ Auto-Install Libraries — pip install otomatis saat import gagal
+✅ 100+ AI Models — 15+ provider (OpenAI, Anthropic, Google, DeepSeek, dll)
+✅ 25+ Channel Integrations — Telegram, Discord, Slack, Matrix, dll
+✅ System Executor — Jalankan command shell dengan timeout
+✅ Advanced Installer — Install tools via apt/yum/pacman/brew/pip/GitHub
+✅ File Manager — Create, read, delete, list files & folders
+✅ Network Scanner — nmap, arp-scan, port scan, wifi scan
+✅ Local Browser — Browse website & DuckDuckGo search tanpa browser
+✅ Web Server — Start HTTP server instan
+✅ OS Detector — Auto-detect Linux distro, WSL, Termux, Docker
+✅ Multi-Provider Fallback — Ganti model otomatis jika gagal
+✅ Chat History — Simpan percakapan di config
+✅ Admin Security — Telegram admin ID filter
+✅ Interactive Menu — TUI dengan warna & box drawing
+📝 Catatan Penting
+Status
+Arti
+✅
+Sudah tersedia & stabil
+🚧
+Dalam pengembangan / placeholder
+WhatsApp: Memerlukan konfigurasi tambahan (pywhatsapp)
+Google services: Memerlukan OAuth 2.0 setup (credentials.json)
+Database adapters: Memerlukan koneksi valid, auto-install library
+MCP Servers: Implementasi kustom sesuai kebutuhan
+🔒 Security
+Semua command dijalankan dengan timeout (default 300s)
+Admin ID filter untuk Telegram
+Sandbox mode — perintah berjalan di home directory
+API keys disimpan di ~/.nexcorix_config.json (chmod 600 direkomendasikan)
+🐛 Troubleshooting
+# Permission denied
+chmod +x run.sh
+chmod 600 ~/.nexcorix_config.json
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+# Module not found
+pip install -r requirements.txt
+# atau biarkan auto-install saat run
 
-```
-MIT License
+# Telegram bot tidak merespon
+# Pastikan token valid dan bot tidak di-block
 
-Copyright (c) 2024 Nexorix Team
+# API key invalid
+# Cek di Settings → Test AI Connections (menu 12)
+📜 License
+MIT License — bebas modifikasi & distribusi.
+�
+￼ 
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+�
+￼ 
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+�
+Made with ❤️ by Nexcorix Team
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Sudah tersedia & stabil
+🚧
+Dalam pengembangan / placeholder
+WhatsApp: Memerlukan konfigurasi tambahan (pywhatsapp)
+Google services: Memerlukan OAuth 2.0 setup (credentials.json)
+Database adapters: Memerlukan koneksi valid, auto-install library
+MCP Servers: Implementasi kustom sesuai kebutuhan
+🔒 Security
+Semua command dijalankan dengan timeout (default 300s)
+Admin ID filter untuk Telegram
+Sandbox mode — perintah berjalan di home directory
+API keys disimpan di ~/.nexcorix_config.json (chmod 600 direkomendasikan)
+🐛 Troubleshooting
+# Permission denied
+chmod +x run.sh
+chmod 600 ~/.nexcorix_config.json
 
----
+# Module not found
+pip install -r requirements.txt
+# atau biarkan auto-install saat run
 
-## 🙏 Acknowledgments
+# Telegram bot tidak merespon
+# Pastikan token valid dan bot tidak di-block
 
-- [OpenRouter](https://openrouter.ai) — Unified AI API Gateway
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) — Telegram Bot Framework
-- [Termux](https://termux.dev) — Android Terminal Emulator
-- [Contributors](https://github.com/Nexorix/Nexorix-Claw/graphs/contributors) — All amazing contributors
+# API key invalid
+# Cek di Settings → Test AI Connections (menu 12)
+📜 License
+MIT License — bebas modifikasi & distribusi.
+�
+￼ 
 
----
+�
+￼ 
 
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=venom&height=150&color=gradient&customColorList=0,2,2,5,30&section=footer&animation=twinkling" />
-</p>
-
-<p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=600&size=18&pause=1000&color=FF00FF&center=true&vCenter=true&width=500&lines=Made+with+❤️+by+Nexorix+Team;⚡+Power+Your+Terminal+with+AI" alt="Footer Animation" />
-  <br><br>
-  <a href="https://t.me/Nexorix">Telegram</a> •
-  <a href="https://github.com/Nexorix">GitHub</a> •
-  <a href="https://nexorix.dev">Website</a>
-</p>
-"""
-
-# Tulis ke file baru
-output_path = "/mnt/agents/output/README.md"
-with open(output_path, "w", encoding="utf-8") as f:
-    f.write(readme_content)
-
-print("✅ File README.md berhasil dibuat!")
-print(f"📁 Nama file: README.md")
-print(f"📂 Lokasi: {output_path}")
-print(f"📊 Ukuran: {len(readme_content)} karakter")
-print(f"🎨 Fitur visual: Venom header, Twinkling animation, Orbitron font, Gradient dividers")
+�
+Made with ❤️ by Nexcorix Team
