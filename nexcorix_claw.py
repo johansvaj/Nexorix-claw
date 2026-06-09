@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nexcorix Claw v4.0 - Ultimate AI Agent for All OS (Termux, Linux, Windows, macOS)
-Fully functional: Channels, Settings, AI with emotions, direct command execution.
+Nexcorix Claw v4.0 - Ultimate AI Agent for All OS (Termux, Linux, Windows, WSL, Proot)
+Fully functional: AI with emotions, direct commands, multi-channel, settings, auto-sudo handling.
 """
 
 import os
@@ -65,7 +65,7 @@ def load_cfg():
 def save_cfg(cfg):
     with open(CONFIG_FILE, "w") as f: json.dump(cfg, f, indent=2)
 
-# ========== OS Detector (Fixed) ==========
+# ========== OS Detector (Auto-detect Termux, proot, WSL, etc.) ==========
 class OSDetector:
     def __init__(self):
         self.info = self._detect()
@@ -95,10 +95,13 @@ class OSDetector:
         except: pass
         info["is_termux"] = os.environ.get("TERMUX_VERSION") is not None
         info["is_docker"] = os.path.exists("/.dockerenv")
+        info["is_proot"] = os.path.exists("/.proot") or "proot" in os.environ.get("PROOT_LOADER", "")
         info["package_managers"] = self._detect_package_manager()
         if info["is_termux"] and "pkg" not in info["package_managers"]:
             info["package_managers"].append("pkg")
         info["has_sudo"] = os.system("which sudo >/dev/null 2>&1") == 0
+        # Di proot, sudo mungkin tidak ada, tapi kita bisa menggunakan 'su -c'
+        info["can_root"] = (info["has_sudo"] or os.system("which su >/dev/null 2>&1") == 0 or info["is_termux"] == False)
         return info
     def _detect_package_manager(self):
         managers = []
@@ -112,6 +115,7 @@ class OSDetector:
         if self.info["is_wsl"]: parts.append("(WSL)")
         if self.info["is_termux"]: parts.append("(Termux)")
         if self.info["is_docker"]: parts.append("(Docker)")
+        if self.info["is_proot"]: parts.append("(Proot)")
         return " ".join(parts)
     def get_ai_context(self):
         i = self.info
@@ -168,6 +172,14 @@ class AdvancedInstaller:
         return managers[0] if managers else None
     def resolve_package(self, tool_name): return self.tool_aliases.get(tool_name.lower(), tool_name)
     def _has_sudo(self): return self.os_detector.info.get("has_sudo", False)
+    def _run_privileged(self, cmd):
+        """Jalankan command dengan hak root jika diperlukan dan tersedia."""
+        if self._has_sudo():
+            return self.executor.run(f"sudo {cmd}")
+        elif os.system("which su >/dev/null 2>&1") == 0:
+            return self.executor.run(f"su -c '{cmd}'")
+        else:
+            return self.executor.run(cmd)
     def install(self, package, pm=None):
         if not pm: pm = self.get_primary_pm()
         if not pm or pm=="unknown": return False, "No package manager!"
@@ -176,7 +188,7 @@ class AdvancedInstaller:
         if pm in self.pm_commands:
             cmd = self.pm_commands[pm].format(package=resolved)
             if pm in ["apt","apt-get","dnf","yum","pacman","zypper","apk"] and self._has_sudo():
-                cmd = "sudo "+cmd
+                cmd = "sudo " + cmd
             if self.os_detector.info.get("is_termux", False):
                 cmd = cmd.replace("sudo ", "")
             result = self.executor.run(cmd, timeout=600)
@@ -185,7 +197,7 @@ class AdvancedInstaller:
                 if resolved != package:
                     cmd2 = self.pm_commands[pm].format(package=package)
                     if pm in ["apt","apt-get","dnf","yum","pacman","zypper","apk"] and self._has_sudo():
-                        cmd2 = "sudo "+cmd2
+                        cmd2 = "sudo " + cmd2
                     if self.os_detector.info.get("is_termux", False):
                         cmd2 = cmd2.replace("sudo ", "")
                     result2 = self.executor.run(cmd2, timeout=600)
@@ -275,30 +287,54 @@ class FileManager:
         if path.startswith(home): path = "~" + path[len(home):]
         return path
 
-# ========== Network Scanner ==========
+# ========== Network Scanner (dengan fallback ping sweep) ==========
 class NetworkScanner:
     def __init__(self):
         self.executor = SystemExecutor()
         self.os_detector = OSDetector()
     def scan_network(self, target="192.168.1.0/24"):
         is_termux = self.os_detector.info.get("is_termux", False)
+        is_proot = self.os_detector.info.get("is_proot", False)
         has_nmap = os.system("which nmap >/dev/null 2>&1") == 0
-        if not has_nmap: return "❌ nmap not installed. Install with 'install nmap' or 'pkg install nmap'."
-        if is_termux: cmd = f"nmap -sn {target}"
-        else: cmd = f"sudo nmap -sn {target}" if self.os_detector.info.get("has_sudo", False) else f"nmap -sn {target}"
-        result = self.executor.run(cmd, timeout=60)
-        if result["success"] and result["stdout"].strip(): return f"🔍 Scan result for {target}:\n{result['stdout']}"
-        if not is_termux and os.system("which arp-scan >/dev/null 2>&1") == 0:
-            cmd2 = f"sudo arp-scan --localnet" if self.os_detector.info.get("has_sudo", False) else "arp-scan --localnet"
-            result2 = self.executor.run(cmd2, timeout=60)
-            if result2["success"] and result2["stdout"].strip(): return f"🔍 ARP scan result:\n{result2['stdout']}"
-        return f"❌ Network scan failed.\nError: {result['stderr']}"
+        if not has_nmap:
+            return "❌ nmap tidak terinstall. Install dengan: pkg install nmap (Termux) atau apt install nmap (Linux)"
+        if is_termux or is_proot:
+            cmd = f"nmap -sn {target} 2>&1"
+            result = self.executor.run(cmd, timeout=60)
+            if result["success"] and result["stdout"].strip():
+                return f"🔍 Hasil scan {target}:\n{result['stdout']}"
+            # Jika gagal karena permission, fallback ke ping sweep
+            if "Permission denied" in result["stderr"] or "if_indextoname" in result["stderr"]:
+                base_ip = target.split('/')[0].rsplit('.', 1)[0] if '.' in target else "192.168.1"
+                ping_cmd = f"for i in {{1..254}}; do ping -c 1 -W 1 {base_ip}.$i 2>/dev/null | grep '64 bytes' && echo 'Host {base_ip}.$i is up'; done"
+                result2 = self.executor.run(ping_cmd, timeout=120)
+                if result2["success"] and result2["stdout"].strip():
+                    return f"🔍 Hasil ping sweep (alternatif) untuk {base_ip}.0/24:\n{result2['stdout']}"
+                else:
+                    return f"❌ Scan gagal. nmap butuh izin raw socket. Coba jalankan program dengan 'su -' atau 'sudo'.\nError: {result['stderr'][:300]}"
+            else:
+                return f"❌ Scan gagal.\nError: {result['stderr'][:300]}"
+        else:
+            # Linux biasa, gunakan sudo
+            cmd = f"sudo nmap -sn {target} 2>/dev/null"
+            result = self.executor.run(cmd, timeout=60)
+            if result["success"] and result["stdout"].strip():
+                return f"🔍 Hasil scan {target}:\n{result['stdout']}"
+            # Fallback arp-scan
+            if os.system("which arp-scan >/dev/null 2>&1") == 0:
+                cmd2 = f"sudo arp-scan --localnet" if self.os_detector.info.get("has_sudo", False) else "arp-scan --localnet"
+                result2 = self.executor.run(cmd2, timeout=60)
+                if result2["success"] and result2["stdout"].strip():
+                    return f"🔍 Hasil ARP scan:\n{result2['stdout']}"
+            return f"❌ Scan jaringan gagal.\nError: {result['stderr']}"
     def scan_ports(self, target, ports="1-1000"):
         has_nmap = os.system("which nmap >/dev/null 2>&1") == 0
         if not has_nmap: return "❌ nmap not installed."
         is_termux = self.os_detector.info.get("is_termux", False)
-        if is_termux: cmd = f"nmap -p {ports} {target}"
-        else: cmd = f"sudo nmap -p {ports} {target}" if self.os_detector.info.get("has_sudo", False) else f"nmap -p {ports} {target}"
+        if is_termux:
+            cmd = f"nmap -p {ports} {target}"
+        else:
+            cmd = f"sudo nmap -p {ports} {target}" if self.os_detector.info.get("has_sudo", False) else f"nmap -p {ports} {target}"
         result = self.executor.run(cmd, timeout=120)
         return result["stdout"] if result["success"] else f"Port scan failed:\n{result['stderr']}"
     def wifi_scan(self):
@@ -558,6 +594,77 @@ class AIChatEngine:
         if success: return response
         else: return f"Maaf, aku tidak mengerti. Coba perintah seperti 'install nmap', 'scan network', atau ajak ngobrol biasa."
 
+    def test_provider_connection(self, provider):
+        """Test API key validity for a specific provider."""
+        cfg = self.cfg
+        if provider == "openai":
+            api_key = cfg.get("openai_key", "")
+            if not api_key: return False, "No API key set"
+            url = "https://api.openai.com/v1/models"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            try:
+                req = urllib.request.Request(url, headers=headers, method="GET")
+                with urllib.request.urlopen(req, timeout=10):
+                    return True, "Valid"
+            except Exception as e: return False, str(e)
+        elif provider == "anthropic":
+            api_key = cfg.get("anthropic_key", "")
+            if not api_key: return False, "No API key set"
+            url = "https://api.anthropic.com/v1/messages"
+            headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01", "Content-Type": "application/json"}
+            data = {"model": "claude-3-haiku-20240307", "max_tokens": 1, "messages": [{"role": "user", "content": "Hi"}]}
+            try:
+                req = urllib.request.Request(url, data=json.dumps(data).encode(), headers=headers, method="POST")
+                with urllib.request.urlopen(req, timeout=10):
+                    return True, "Valid"
+            except urllib.error.HTTPError as e:
+                if e.code == 401: return False, "Invalid key"
+                else: return False, f"HTTP {e.code}"
+            except Exception as e: return False, str(e)
+        elif provider == "google":
+            api_key = cfg.get("google_key", "")
+            if not api_key: return False, "No API key set"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+            try:
+                req = urllib.request.Request(url, method="GET")
+                with urllib.request.urlopen(req, timeout=10):
+                    return True, "Valid"
+            except Exception as e: return False, str(e)
+        elif provider == "deepseek":
+            api_key = cfg.get("deepseek_key", "")
+            if not api_key: return False, "No API key set"
+            url = "https://api.deepseek.com/v1/models"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            try:
+                req = urllib.request.Request(url, headers=headers, method="GET")
+                with urllib.request.urlopen(req, timeout=10):
+                    return True, "Valid"
+            except Exception as e: return False, str(e)
+        elif provider == "openrouter":
+            api_key = cfg.get("openrouter_key", "")
+            if not api_key: return False, "No API key set"
+            url = "https://openrouter.ai/api/v1/auth/key"
+            headers = {"Authorization": f"Bearer {api_key}"}
+            try:
+                req = urllib.request.Request(url, headers=headers, method="GET")
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode())
+                    credits = data.get('credits', 'unknown')
+                    return True, f"Credits: {credits}"
+            except Exception as e: return False, str(e)
+        elif provider == "ollama":
+            url = "http://localhost:11434/api/tags"
+            try:
+                req = urllib.request.Request(url, method="GET")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read().decode())
+                    models = [m['name'] for m in data.get('models', [])]
+                    return True, f"Running, models: {', '.join(models[:2])}"
+            except Exception as e:
+                return False, "Ollama not reachable"
+        else:
+            return False, "Unknown provider"
+
 # ========== Channel Adapters ==========
 class BaseChannelAdapter:
     def __init__(self, name, config, ai_engine):
@@ -616,7 +723,7 @@ class TelegramAdapter(BaseChannelAdapter):
         self._running = False
         if self.loop: self.loop.call_soon_threadsafe(self.loop.stop)
 
-# Discord (sederhana)
+# Discord
 class DiscordAdapter(BaseChannelAdapter):
     def start(self):
         if not ensure_package("discord.py", "discord"): return
