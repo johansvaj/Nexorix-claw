@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Nexcorix Claw v4.0 - Ultimate Multi-Channel AI Agent with 100+ Models
-All 30+ channels working with auto-install libraries.
+All commands execute directly, no "how to" instructions.
 """
 
 import os
@@ -261,14 +261,25 @@ class NetworkScanner:
     def __init__(self):
         self.executor = SystemExecutor()
     def scan_network(self, target="192.168.1.0/24"):
-        result = self.executor.run(f"nmap -sn {target} 2>/dev/null || arp-scan --localnet 2>/dev/null", timeout=60)
-        return result["stdout"] if result["success"] else f"Gagal scan: {result['stderr']}"
+        # Coba nmap
+        cmd = f"nmap -sn {target} 2>/dev/null"
+        result = self.executor.run(cmd, timeout=60)
+        if result["success"] and result["stdout"].strip():
+            return f"🔍 Scan result for {target}:\n{result['stdout']}"
+        # Fallback arp-scan
+        cmd2 = f"arp-scan --localnet 2>/dev/null"
+        result2 = self.executor.run(cmd2, timeout=60)
+        if result2["success"] and result2["stdout"].strip():
+            return f"🔍 ARP scan result:\n{result2['stdout']}"
+        return f"❌ Network scan failed. Install nmap or arp-scan.\nError: {result['stderr'] or result2['stderr']}"
     def scan_ports(self, target, ports="1-1000"):
-        result = self.executor.run(f"nmap -p {ports} {target}", timeout=120)
-        return result["stdout"] if result["success"] else result["stderr"]
+        cmd = f"nmap -p {ports} {target}"
+        result = self.executor.run(cmd, timeout=120)
+        return result["stdout"] if result["success"] else f"Port scan failed:\n{result['stderr']}"
     def wifi_scan(self):
-        result = self.executor.run("sudo iwlist wlan0 scan 2>/dev/null || nmcli dev wifi list 2>/dev/null", timeout=30)
-        return result["stdout"] if result["success"] else "WiFi scan not available"
+        cmd = "nmcli dev wifi list 2>/dev/null || sudo iwlist wlan0 scan 2>/dev/null | grep -E 'ESSID|Signal'"
+        result = self.executor.run(cmd, timeout=30)
+        return result["stdout"] if result["success"] else "WiFi scan not available."
 
 # ========== Local Browser ==========
 class HTMLStripper(HTMLParser):
@@ -404,7 +415,9 @@ class AIChatEngine:
         if not system_prompt:
             system_prompt = (
                 "You are Nexcorix Claw, an AI agent with FULL SYSTEM CONTROL. "
-                "You can execute commands, install tools, scan networks, manage files, start web servers, browse websites. "
+                "You MUST execute commands immediately, do NOT give instructions. "
+                "When asked to scan network, run 'nmap -sn'. When asked to install, run 'install'. "
+                "You must respond with the ACTUAL RESULT of the command, not a tutorial."
                 f"System info: {self.os_detector.get_ai_context()}"
             )
         messages = [{"role": "system", "content": system_prompt}]
@@ -461,72 +474,115 @@ class AIChatEngine:
 
     def process(self, user_id, text):
         lower = text.lower().strip()
-        # Perintah langsung
-        if lower.startswith("install "):
-            pkgs = text[8:].strip().split()
-            if len(pkgs)>1: return self.installer.install_multiple(pkgs)
-            else: s,r = self.installer.install(pkgs[0]); return ("OK " if s else "FAIL ")+r
-        elif lower.startswith("github "):
-            tool = text[7:].strip()
-            s,r = self.installer.install_from_github(tool); return ("OK " if s else "FAIL ")+r
-        elif lower.startswith("pip "):
-            pkg = text[4:].strip()
-            s,r = self.installer.install_pip_tool(pkg); return ("OK " if s else "FAIL ")+r
-        elif lower.startswith("scan network"):
-            target = text[13:].strip() or "192.168.1.0/24"
-            return self.network.scan_network(target)
-        elif lower.startswith("scan ports"):
-            parts = text[11:].strip().split()
+        
+        # ========== SCAN JARINGAN (prioritas) ==========
+        if re.search(r'(scan|cek|lihat)\s+(network|jaringan|ip|wifi)', lower) or re.match(r'scan\s+\d+\.\d+\.\d+\.\d+', lower):
+            target_match = re.search(r'(\d+\.\d+\.\d+\.\d+(?:/\d+)?)', text)
+            target = target_match.group(1) if target_match else "192.168.1.0/24"
+            if 'wifi' in lower:
+                return self.network.wifi_scan()
+            else:
+                return self.network.scan_network(target)
+        
+        if re.match(r'scan ports?\s+', lower):
+            parts = re.sub(r'scan ports?\s+', '', text).strip().split()
             target = parts[0] if parts else "localhost"
-            ports = parts[1] if len(parts)>1 else "1-1000"
+            ports = parts[1] if len(parts) > 1 else "1-1000"
             return self.network.scan_ports(target, ports)
-        elif lower.startswith("wifi scan"):
+        
+        if 'wifi scan' in lower or 'scan wifi' in lower:
             return self.network.wifi_scan()
-        elif lower.startswith("browse "):
-            url = text[7:].strip()
-            s,res = self.browser.browse(url); return res if s else f"Error: {res}"
-        elif lower.startswith("search "):
-            q = text[7:].strip()
-            s,res = self.browser.search_duckduckgo(q); return res if s else f"Error: {res}"
-        elif lower.startswith("create file "):
-            parts = text[12:].strip().split(maxsplit=1)
+        
+        # ========== INSTALL ==========
+        if re.match(r'^(install|pasang|instal)\s+', lower):
+            pkgs = re.sub(r'^(install|pasang|instal)\s+', '', text).strip().split()
+            if len(pkgs) > 1:
+                return self.installer.install_multiple(pkgs)
+            else:
+                s, r = self.installer.install(pkgs[0])
+                return ("OK " if s else "FAIL ") + r
+        
+        if re.match(r'^(github|clone)\s+', lower):
+            tool = re.sub(r'^(github|clone)\s+', '', text).strip()
+            s, r = self.installer.install_from_github(tool)
+            return ("OK " if s else "FAIL ") + r
+        
+        if re.match(r'^pip\s+', lower):
+            pkg = re.sub(r'^pip\s+', '', text).strip()
+            s, r = self.installer.install_pip_tool(pkg)
+            return ("OK " if s else "FAIL ") + r
+        
+        # ========== BROWSING & SEARCH ==========
+        if re.match(r'(browse|buka|lihat|open)\s+', lower):
+            url = re.sub(r'^(browse|buka|lihat|open)\s+', '', text).strip()
+            s, res = self.browser.browse(url)
+            return res if s else f"Error: {res}"
+        
+        if re.match(r'(search|cari|google|temukan)\s+', lower):
+            query = re.sub(r'^(search|cari|google|temukan)\s+', '', text).strip()
+            s, res = self.browser.search_duckduckgo(query)
+            return res if s else f"Error: {res}"
+        
+        # ========== FILE MANAGER ==========
+        if re.match(r'create file\s+', lower):
+            parts = re.sub(r'create file\s+', '', text).strip().split(maxsplit=1)
             filename = parts[0]
-            content = parts[1] if len(parts)>1 else ""
-            s,msg = self.fm.create_file(filename, content); return msg
-        elif lower.startswith("create folder "):
-            name = text[14:].strip()
-            s,msg = self.fm.create_folder(name); return msg
-        elif lower.startswith("delete "):
-            name = text[7:].strip()
-            s,msg = self.fm.delete_item(name); return msg
-        elif lower.startswith("read file "):
-            name = text[10:].strip()
-            content,err = self.fm.read_file(name); return content[:3000] if content else err
-        elif lower.startswith("list files"):
+            content = parts[1] if len(parts) > 1 else ""
+            s, msg = self.fm.create_file(filename, content)
+            return msg
+        if re.match(r'create folder\s+|mkdir\s+', lower):
+            name = re.sub(r'^(create folder|mkdir)\s+', '', text).strip()
+            s, msg = self.fm.create_folder(name)
+            return msg
+        if re.match(r'delete\s+', lower):
+            name = re.sub(r'^delete\s+', '', text).strip()
+            s, msg = self.fm.delete_item(name)
+            return msg
+        if re.match(r'read file\s+', lower):
+            name = re.sub(r'^read file\s+', '', text).strip()
+            content, err = self.fm.read_file(name)
+            return content[:3000] if content else err
+        if re.match(r'list files?|ls|dir', lower):
             return self.fm.list_items()
-        elif lower.startswith("cd "):
-            path = text[3:].strip()
-            if self.fm.set_path(path): return f"Now at: {self.fm.get_path()}"
-            else: return "Path not found"
-        elif lower.startswith("run "):
-            cmd = text[4:].strip()
+        if re.match(r'cd\s+', lower):
+            path = re.sub(r'^cd\s+', '', text).strip()
+            if self.fm.set_path(path):
+                return f"Now at: {self.fm.get_path()}"
+            else:
+                return "Path not found"
+        
+        # ========== RUN COMMAND ==========
+        if re.match(r'run\s+', lower):
+            cmd = re.sub(r'^run\s+', '', text).strip()
             result = self.executor.run(cmd)
             out = result["stdout"][:3000] if result["stdout"] else ""
             err = result["stderr"][:1000] if result["stderr"] else ""
             return f"SUCCESS: {cmd}\nOUTPUT:\n{out}\nERROR:\n{err}"
-        elif lower.startswith("web server"):
-            parts = text[11:].strip().split()
+        
+        # ========== WEB SERVER ==========
+        if re.match(r'web server\s*', lower):
+            parts = re.sub(r'web server\s*', '', text).strip().split()
             folder = parts[0] if parts else "nexcorix_site"
-            port = int(parts[1]) if len(parts)>1 else 8080
+            port = int(parts[1]) if len(parts) > 1 else 8080
             full_path = self.web.create_html_site(folder)
-            s,msg = self.web.start_server(full_path, port)
+            s, msg = self.web.start_server(full_path, port)
             return msg
-        elif lower.startswith("update system"):
-            s,msg = self.installer.update_repos()
+        
+        # ========== UPDATE SYSTEM ==========
+        if re.match(r'update (system|repos)', lower):
+            s, msg = self.installer.update_repos()
             return msg
+        
+        # ========== FALLBACK AI ==========
+        success, response = self.chat_with_ai(user_id, text)
+        if success:
+            # Coba eksekusi jika response adalah perintah
+            if any(x in response.lower() for x in ['install', 'scan', 'browse', 'run', 'create', 'cd']):
+                return self.process(user_id, response)
+            else:
+                return response
         else:
-            success, response = self.chat_with_ai(user_id, text)
-            return response if success else "AI tidak tersedia. Periksa API key atau gunakan perintah langsung seperti 'install nmap'."
+            return "Maaf, perintah tidak dikenali. Gunakan: 'scan network', 'install nmap', 'browse google.com', dll."
 
     def test_provider_connection(self, provider):
         """Test API key validity for a specific provider."""
@@ -693,7 +749,6 @@ class DiscordAdapter(BaseChannelAdapter):
 class WhatsAppAdapter(BaseChannelAdapter):
     def start(self):
         if not ensure_package("pywhatsapp", "pywhatsapp"): return
-        # Implementasi sederhana: belum full
         print("WhatsApp adapter: pywhatsapp installed, need further configuration.")
         self._running = True
 
