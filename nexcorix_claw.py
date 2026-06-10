@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nexcorix Claw v4.0 - Ultimate AI Agent
-Fitur: AI ramah, eksekusi langsung, notifikasi proses, 100+ model, multi-channel, multi-OS.
+Nexcorix Claw v4.0 - Ultimate AI Agent (dengan streaming output)
+Fitur: AI ramah, eksekusi langsung dengan output real-time, 100+ model, multi-channel.
 """
 
 import os, sys, json, time, platform, socket, re, shutil, threading, asyncio, subprocess
@@ -93,7 +93,24 @@ class OSDetector:
 # ========== System Executor ==========
 class SystemExecutor:
     def __init__(self): self.os_detector = OSDetector()
+    def run_streaming(self, command, timeout=300):
+        """Jalankan command dengan streaming output ke terminal"""
+        try:
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, cwd=os.path.expanduser("~"))
+            output_lines = []
+            for line in process.stdout:
+                print(line, end='')
+                output_lines.append(line)
+            process.wait(timeout=timeout)
+            success = process.returncode == 0
+            return {"success": success, "stdout": "".join(output_lines), "stderr": "", "command": command}
+        except subprocess.TimeoutExpired:
+            process.kill()
+            return {"success": False, "stdout": "", "stderr": f"Command timed out after {timeout}s", "command": command}
+        except Exception as e:
+            return {"success": False, "stdout": "", "stderr": str(e), "command": command}
     def run(self, command, timeout=300):
+        # Untuk perintah yang tidak perlu streaming, gunakan ini
         try:
             if os.name == "nt":
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.path.expanduser("~"))
@@ -140,7 +157,40 @@ class AdvancedInstaller:
         return managers[0] if managers else None
     def resolve_package(self, tool_name): return self.tool_aliases.get(tool_name.lower(), tool_name)
     def _has_sudo(self): return self.os_detector.info.get("has_sudo", False)
+    def install_streaming(self, package, pm=None):
+        """Install dengan streaming output ke terminal"""
+        if not pm: pm = self.get_primary_pm()
+        if not pm or pm=="unknown": return False, "No package manager!"
+        resolved = self.resolve_package(package)
+        if package.lower() in self.github_tools:
+            return self.install_from_github_streaming(package.lower())
+        if pm in self.pm_commands:
+            cmd = self.pm_commands[pm].format(package=resolved)
+            if pm in ["apt","apt-get","dnf","yum","pacman","zypper","apk"] and self._has_sudo():
+                cmd = "sudo " + cmd
+            if self.os_detector.info.get("is_termux", False):
+                cmd = cmd.replace("sudo ", "")
+            result = self.executor.run_streaming(cmd, timeout=600)
+            return result["success"], result["stdout"] if result["success"] else result["stderr"]
+        return False, f"PM {pm} not supported"
+    def install_from_github_streaming(self, tool_name):
+        if tool_name not in self.github_tools: return False, "Not in registry"
+        repo_url = self.github_tools[tool_name]
+        install_dir = os.path.expanduser(f"~/tools/{tool_name}")
+        os.makedirs(os.path.expanduser("~/tools"), exist_ok=True)
+        cmd = f"git clone {repo_url} {install_dir} 2>&1 || cd {install_dir} && git pull 2>&1"
+        result = self.executor.run_streaming(cmd, timeout=120)
+        if not result["success"] and "already exists" not in result["stdout"]:
+            return False, f"Git clone failed:\n{result['stdout']}"
+        setup_result = f"Cloned to {install_dir}"
+        if tool_name in ["linpeas","winpeas"]:
+            setup_result = "PEASS downloaded. Usage: cd ~/tools/linpeas && ./linpeas.sh"
+        elif tool_name == "impacket":
+            self.executor.run_streaming(f"cd {install_dir} && pip3 install . 2>&1", timeout=120)
+            setup_result = "impacket installed via pip3."
+        return True, f"GitHub Install: {tool_name}\nRepo: {repo_url}\nDir: {install_dir}\n\n{setup_result}"
     def install(self, package, pm=None):
+        # Non-streaming fallback
         if not pm: pm = self.get_primary_pm()
         if not pm or pm=="unknown": return False, "No package manager!"
         resolved = self.resolve_package(package)
@@ -152,17 +202,8 @@ class AdvancedInstaller:
             if self.os_detector.info.get("is_termux", False):
                 cmd = cmd.replace("sudo ", "")
             result = self.executor.run(cmd, timeout=600)
-            if result["success"]: return True, f"OK {package} via {pm}\n{result['stdout'][:1500]}"
-            else:
-                if resolved != package:
-                    cmd2 = self.pm_commands[pm].format(package=package)
-                    if pm in ["apt","apt-get","dnf","yum","pacman","zypper","apk"] and self._has_sudo():
-                        cmd2 = "sudo " + cmd2
-                    if self.os_detector.info.get("is_termux", False):
-                        cmd2 = cmd2.replace("sudo ", "")
-                    result2 = self.executor.run(cmd2, timeout=600)
-                    if result2["success"]: return True, f"OK {package} via {pm}\n{result2['stdout'][:1500]}"
-                return False, f"FAIL {package}\n{result['stderr'][:1500]}"
+            if result["success"]: return True, result["stdout"]
+            else: return False, result["stderr"]
         return False, f"PM {pm} not supported"
     def install_multiple(self, packages):
         results = []
@@ -377,54 +418,21 @@ class WebServerManager:
 
 # ========== 100+ Model Definitions ==========
 MODELS_BY_PROVIDER = {
-    "openai": [
-        "openai/gpt-4o", "openai/gpt-4o-mini", "openai/gpt-4-turbo", "openai/gpt-4", "openai/gpt-3.5-turbo",
-        "openai/o1-preview", "openai/o1-mini", "openai/o3-mini"
-    ],
-    "anthropic": [
-        "anthropic/claude-3.5-sonnet", "anthropic/claude-3-opus", "anthropic/claude-3-sonnet", "anthropic/claude-3-haiku"
-    ],
-    "google": [
-        "google/gemini-1.5-pro", "google/gemini-1.5-flash", "google/gemini-1.0-pro", "google/gemma-2-9b-it", "google/gemma-2-27b-it"
-    ],
-    "deepseek": [
-        "deepseek/deepseek-chat", "deepseek/deepseek-coder"
-    ],
-    "meta": [
-        "meta-llama/llama-3.1-405b-instruct", "meta-llama/llama-3.1-70b-instruct", "meta-llama/llama-3.1-8b-instruct",
-        "meta-llama/llama-3-70b-instruct", "meta-llama/llama-3-8b-instruct"
-    ],
-    "mistral": [
-        "mistralai/mistral-large", "mistralai/mistral-medium", "mistralai/mixtral-8x7b-instruct", "mistralai/mistral-7b-instruct",
-        "mistralai/codestral-22b-instruct", "mistralai/mathstral-7b-instruct"
-    ],
-    "qwen": [
-        "qwen/qwen-2.5-72b-instruct", "qwen/qwen-2.5-32b-instruct", "qwen/qwen-2.5-14b-instruct", "qwen/qwen-2-7b-instruct"
-    ],
-    "xai": [
-        "x-ai/grok-2", "x-ai/grok-1", "x-ai/grok-beta"
-    ],
-    "cohere": [
-        "cohere/command-r-plus", "cohere/command-r"
-    ],
-    "ai21": [
-        "ai21/jamba-1.5"
-    ],
-    "databricks": [
-        "databricks/dbrx-instruct"
-    ],
-    "upstage": [
-        "upstage/solar-10.7b-instruct"
-    ],
-    "nvidia": [
-        "nvidia/nemotron-4-340b-instruct"
-    ],
-    "perplexity": [
-        "perplexity/pplx-7b-online"
-    ],
-    "moonshot": [
-        "moonshot/kimi-v1"
-    ],
+    "openai": ["openai/gpt-4o", "openai/gpt-4o-mini", "openai/gpt-4-turbo", "openai/gpt-4", "openai/gpt-3.5-turbo", "openai/o1-preview", "openai/o1-mini", "openai/o3-mini"],
+    "anthropic": ["anthropic/claude-3.5-sonnet", "anthropic/claude-3-opus", "anthropic/claude-3-sonnet", "anthropic/claude-3-haiku"],
+    "google": ["google/gemini-1.5-pro", "google/gemini-1.5-flash", "google/gemini-1.0-pro", "google/gemma-2-9b-it", "google/gemma-2-27b-it"],
+    "deepseek": ["deepseek/deepseek-chat", "deepseek/deepseek-coder"],
+    "meta": ["meta-llama/llama-3.1-405b-instruct", "meta-llama/llama-3.1-70b-instruct", "meta-llama/llama-3.1-8b-instruct", "meta-llama/llama-3-70b-instruct", "meta-llama/llama-3-8b-instruct"],
+    "mistral": ["mistralai/mistral-large", "mistralai/mistral-medium", "mistralai/mixtral-8x7b-instruct", "mistralai/mistral-7b-instruct", "mistralai/codestral-22b-instruct", "mistralai/mathstral-7b-instruct"],
+    "qwen": ["qwen/qwen-2.5-72b-instruct", "qwen/qwen-2.5-32b-instruct", "qwen/qwen-2.5-14b-instruct", "qwen/qwen-2-7b-instruct"],
+    "xai": ["x-ai/grok-2", "x-ai/grok-1", "x-ai/grok-beta"],
+    "cohere": ["cohere/command-r-plus", "cohere/command-r"],
+    "ai21": ["ai21/jamba-1.5"],
+    "databricks": ["databricks/dbrx-instruct"],
+    "upstage": ["upstage/solar-10.7b-instruct"],
+    "nvidia": ["nvidia/nemotron-4-340b-instruct"],
+    "perplexity": ["perplexity/pplx-7b-online"],
+    "moonshot": ["moonshot/kimi-v1"],
     "openrouter": [
         "openai/gpt-4o", "openai/gpt-4o-mini", "openai/gpt-4-turbo", "openai/gpt-4", "openai/gpt-3.5-turbo",
         "anthropic/claude-3.5-sonnet", "anthropic/claude-3-opus", "anthropic/claude-3-sonnet", "anthropic/claude-3-haiku",
@@ -443,7 +451,7 @@ MODELS_BY_PROVIDER = {
         "moonshot/kimi-v1"
     ]
 }
-total_models = sum(len(models) for models in MODELS_BY_PROVIDER.values())
+total_models = sum(len(models) for models in MODELS_BY_PROVIDER.items())
 print(f"[*] Loaded {total_models} AI models from providers.")
 
 ALL_MODELS = {}
@@ -607,194 +615,200 @@ class AIChatEngine:
 
     def process(self, user_id, text):
         lower = text.lower().strip()
-        # Helper untuk notifikasi
         def notify(msg, status="info"):
-            if status == "info":
-                return f"🔄 {msg}"
-            elif status == "success":
-                return f"✅ {msg}"
-            elif status == "error":
-                return f"❌ {msg}"
-            else:
-                return msg
-        
-        # 1. INSTALL
+            if status == "info": return f"🔄 {msg}"
+            elif status == "success": return f"✅ {msg}"
+            elif status == "error": return f"❌ {msg}"
+            else: return msg
+
+        # ========== 1. INSTALL DENGAN STREAMING ==========
         if re.match(r'^(install|pasang|instal)\s+', lower):
             pkgs = re.sub(r'^(install|pasang|instal)\s+', '', text).strip().split()
             if len(pkgs) > 1:
-                notify("Menginstall beberapa package...", "info")
-                result = self.installer.install_multiple(pkgs)
-                return notify("Selesai", "success") + "\n" + result
+                print(notify("Menginstall beberapa package...", "info"))
+                all_success = True
+                for pkg in pkgs:
+                    print(f"\n--- Menginstall {pkg} ---")
+                    s, out = self.installer.install_streaming(pkg)
+                    if not s:
+                        all_success = False
+                    print(out)
+                return notify("Selesai", "success" if all_success else "error")
             else:
-                notify(f"Menginstall {pkgs[0]}...", "info")
-                s, r = self.installer.install(pkgs[0])
-                return (notify("Selesai", "success") if s else notify("Gagal", "error")) + "\n" + r
-        
-        # 2. GITHUB
+                print(notify(f"Menginstall {pkgs[0]}...", "info"))
+                s, out = self.installer.install_streaming(pkgs[0])
+                print(out)
+                return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
+        # ========== 2. GITHUB ==========
         if re.match(r'^(github|clone)\s+', lower):
             tool = re.sub(r'^(github|clone)\s+', '', text).strip()
-            notify(f"Mengclone {tool} dari GitHub...", "info")
-            s, r = self.installer.install_from_github(tool)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + "\n" + r
-        
-        # 3. PIP
+            print(notify(f"Mengclone {tool} dari GitHub...", "info"))
+            s, out = self.installer.install_from_github_streaming(tool)
+            print(out)
+            return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
+        # ========== 3. PIP ==========
         if re.match(r'^pip\s+', lower):
             pkg = re.sub(r'^pip\s+', '', text).strip()
-            notify(f"Menginstall Python package {pkg}...", "info")
-            s, r = self.installer.install_pip_tool(pkg)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + "\n" + r
-        
-        # 4. SCAN
+            print(notify(f"Menginstall Python package {pkg}...", "info"))
+            s, out = self.installer.install_pip_tool(pkg)
+            print(out)
+            return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
+        # ========== 4. SCAN ==========
         if (re.search(r'\bscan\s+(network|jaringan|ip)\b', lower) or re.search(r'\bscan\s+\d+\.\d+\.\d+\.\d+(?:/\d+)?', lower)):
             target_match = re.search(r'(\d+\.\d+\.\d+\.\d+(?:/\d+)?)', text)
             target = target_match.group(1) if target_match else "192.168.1.0/24"
-            notify(f"Memindai jaringan {target}...", "info")
+            print(notify(f"Memindai jaringan {target}...", "info"))
             result = self.network.scan_network(target)
-            return notify("Scan selesai", "success") + "\n" + result
+            print(result)
+            return notify("Scan selesai", "success")
+
         if re.match(r'scan ports?\s+', lower):
             parts = re.sub(r'scan ports?\s+', '', text).strip().split()
             target = parts[0] if parts else "localhost"
             ports = parts[1] if len(parts) > 1 else "1-1000"
-            notify(f"Memindai port {ports} pada {target}...", "info")
+            print(notify(f"Memindai port {ports} pada {target}...", "info"))
             result = self.network.scan_ports(target, ports)
-            return notify("Scan selesai", "success") + "\n" + result
+            print(result)
+            return notify("Scan selesai", "success")
+
         if re.search(r'(wifi scan|scan wifi)', lower):
-            notify("Memindai WiFi...", "info")
+            print(notify("Memindai WiFi...", "info"))
             result = self.network.wifi_scan()
-            return notify("Scan selesai", "success") + "\n" + result
-        
-        # 5. BROWSING & SEARCH
+            print(result)
+            return notify("Scan selesai", "success")
+
+        # ========== 5. BROWSING & SEARCH ==========
         if re.match(r'(browse|buka|lihat|open)\s+', lower):
             url = re.sub(r'^(browse|buka|lihat|open)\s+', '', text).strip()
-            notify(f"Membuka {url}...", "info")
+            print(notify(f"Membuka {url}...", "info"))
             s, res = self.browser.browse(url)
-            return notify("Selesai", "success") + "\n" + (res if s else f"Error: {res}")
+            print(res if s else f"Error: {res}")
+            return notify("Selesai", "success" if s else "error")
+
         if re.match(r'(search|cari|google|temukan)\s+', lower):
             query = re.sub(r'^(search|cari|google|temukan)\s+', '', text).strip()
-            notify(f"Mencari '{query}'...", "info")
+            print(notify(f"Mencari '{query}'...", "info"))
             s, res = self.browser.search_duckduckgo(query)
-            return notify("Selesai", "success") + "\n" + (res if s else f"Error: {res}")
-        
-        # 6. FILE & FOLDER
-        # Pola: "buat folder <nama> dengan kode <isi>" -> buat folder + file script.py
+            print(res if s else f"Error: {res}")
+            return notify("Selesai", "success" if s else "error")
+
+        # ========== 6. FILE & FOLDER ==========
         folder_with_code = re.search(r'buat folder\s+([^\s]+)\s+dengan\s+(?:kode|isi)\s+(.+)', text, re.IGNORECASE)
         if folder_with_code:
             folder_name = folder_with_code.group(1)
             code_content = folder_with_code.group(2)
-            notify(f"Membuat folder '{folder_name}'...", "info")
+            print(notify(f"Membuat folder '{folder_name}'...", "info"))
             s1, msg1 = self.fm.create_folder(folder_name)
             if s1:
                 old_path = self.fm.current_path
                 self.fm.set_path(folder_name)
                 filename = "script.py"
-                notify(f"Membuat file {filename} di dalam folder...", "info")
+                print(notify(f"Membuat file {filename} di dalam folder...", "info"))
                 s2, msg2 = self.fm.create_file(filename, code_content)
                 self.fm.set_path(old_path)
                 if s2:
-                    return notify("Berhasil!", "success") + f"\n✅ Folder '{folder_name}' dan file '{filename}' dibuat.\nKode:\n{code_content}"
+                    print(notify("Berhasil!", "success") + f"\n✅ Folder '{folder_name}' dan file '{filename}' dibuat.\nKode:\n{code_content}")
                 else:
-                    return notify("Folder berhasil, tapi gagal buat file", "error") + f"\n{msg2}"
+                    print(notify("Folder berhasil, gagal buat file", "error") + f"\n{msg2}")
             else:
-                return notify("Gagal membuat folder", "error") + f"\n{msg1}"
-        # Buat folder biasa
+                print(notify("Gagal buat folder", "error") + f"\n{msg1}")
+            return ""
+
         if re.match(r'buat folder\s+', lower):
             name = re.sub(r'^buat folder\s+', '', text).strip()
-            notify(f"Membuat folder '{name}'...", "info")
+            print(notify(f"Membuat folder '{name}'...", "info"))
             s, msg = self.fm.create_folder(name)
-            return notify("Selesai", "success") if s else notify("Gagal", "error") + f"\n{msg}"
-        # Buat file dengan isi
+            print(msg)
+            return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
         if re.match(r'(create file|buat file|simpan file)\s+', lower):
             parts = re.sub(r'^(create file|buat file|simpan file)\s+', '', text).strip().split(maxsplit=1)
             filename = parts[0]
             content = ""
             if len(parts) > 1:
                 isi_match = re.search(r'(?:isi|dengan isi|content:)\s*(.+)', parts[1], re.IGNORECASE)
-                if isi_match:
-                    content = isi_match.group(1).strip()
-                else:
-                    content = parts[1]
-            notify(f"Membuat file '{filename}'...", "info")
+                content = isi_match.group(1).strip() if isi_match else parts[1]
+            print(notify(f"Membuat file '{filename}'...", "info"))
             s, msg = self.fm.create_file(filename, content)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + f"\n{msg}"
-        # Buat file (tanpa isi)
-        if re.match(r'buat file\s+', lower):
-            parts = re.sub(r'^buat file\s+', '', text).strip().split(maxsplit=1)
-            filename = parts[0]
-            content = parts[1] if len(parts) > 1 else ""
-            notify(f"Membuat file '{filename}'...", "info")
-            s, msg = self.fm.create_file(filename, content)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + f"\n{msg}"
-        if re.match(r'create folder\s+|mkdir\s+', lower):
-            name = re.sub(r'^(create folder|mkdir)\s+', '', text).strip()
-            notify(f"Membuat folder '{name}'...", "info")
-            s, msg = self.fm.create_folder(name)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + f"\n{msg}"
+            print(msg)
+            return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
         if re.match(r'delete\s+', lower):
             name = re.sub(r'^delete\s+', '', text).strip()
-            notify(f"Menghapus '{name}'...", "info")
+            print(notify(f"Menghapus '{name}'...", "info"))
             s, msg = self.fm.delete_item(name)
-            return (notify("Selesai", "success") if s else notify("Gagal", "error")) + f"\n{msg}"
+            print(msg)
+            return (notify("Selesai", "success") if s else notify("Gagal", "error"))
+
         if re.match(r'read file\s+', lower):
             name = re.sub(r'^read file\s+', '', text).strip()
             content, err = self.fm.read_file(name)
-            if content:
-                return f"📄 Isi file '{name}':\n{content[:3000]}"
-            else:
-                return notify("Gagal membaca file", "error") + f"\n{err}"
+            if content: print(f"📄 Isi file '{name}':\n{content[:3000]}")
+            else: print(notify("Gagal membaca file", "error") + f"\n{err}")
+            return ""
+
         if re.match(r'list files?|ls|dir', lower):
-            return self.fm.list_items()
+            print(self.fm.list_items())
+            return ""
+
         if re.match(r'cd\s+', lower):
             path = re.sub(r'^cd\s+', '', text).strip()
-            if self.fm.set_path(path):
-                return f"📁 Berada di: {self.fm.get_path()}"
-            else:
-                return notify("Path tidak ditemukan", "error")
-        
-        # 7. RUN COMMAND
+            if self.fm.set_path(path): print(f"📁 Berada di: {self.fm.get_path()}")
+            else: print(notify("Path tidak ditemukan", "error"))
+            return ""
+
+        # ========== 7. RUN DENGAN STREAMING ==========
         if re.match(r'run\s+', lower):
             cmd = re.sub(r'^run\s+', '', text).strip()
-            notify(f"Menjalankan: {cmd}", "info")
-            result = self.executor.run(cmd)
-            out = result["stdout"][:3000] if result["stdout"] else ""
-            err = result["stderr"][:1000] if result["stderr"] else ""
+            print(notify(f"Menjalankan: {cmd}", "info"))
+            result = self.executor.run_streaming(cmd)
             status = "SUCCESS" if result["success"] else "FAILED"
-            return notify(f"Perintah selesai ({status})", "success" if result["success"] else "error") + f"\nOUTPUT:\n{out}\nERROR:\n{err}"
-        
-        # 8. WEB SERVER
+            print(notify(f"Perintah selesai ({status})", "success" if result["success"] else "error"))
+            return ""
+
+        # ========== 8. WEB SERVER ==========
         if re.match(r'web server\s*', lower):
             parts = re.sub(r'web server\s*', '', text).strip().split()
             folder = parts[0] if parts else "nexcorix_site"
             port = int(parts[1]) if len(parts) > 1 else 8080
-            notify(f"Mempersiapkan web server di folder '{folder}', port {port}...", "info")
+            print(notify(f"Mempersiapkan web server di folder '{folder}', port {port}...", "info"))
             full_path = self.web.create_html_site(folder)
             s, msg = self.web.start_server(full_path, port)
-            return notify("Web server berjalan!", "success") + f"\n{msg}"
-        
-        # 9. UPDATE SYSTEM
+            print(msg)
+            return notify("Web server berjalan!", "success")
+
+        # ========== 9. UPDATE SYSTEM ==========
         if re.match(r'update (system|repos)', lower):
-            notify("Mengupdate repository...", "info")
+            print(notify("Mengupdate repository...", "info"))
             s, msg = self.installer.update_repos()
-            return notify("Selesai", "success") if s else notify("Gagal", "error") + f"\n{msg}"
-        
-        # 10. OBROLAN RINGAN (template)
+            print(msg)
+            return notify("Selesai", "success") if s else notify("Gagal", "error")
+
+        # ========== OBROLAN RINGAN ==========
         casual = self._casual_response(text)
         if casual:
-            return casual
-        
-        # 11. PERMINTAAN KODE / PENJELASAN (AI)
+            print(casual)
+            return ""
+
+        # ========== PERMINTAAN BANTUAN ==========
         if re.search(r'(bantu|tolong|buatkan|tuliskan|kode|code|script|program|fungsi|kelas|jelaskan|apa itu|bagaimana cara)', lower):
             success, response = self.chat_with_ai(user_id, text)
             if success:
-                return response
+                print(response)
             else:
-                return f"Maaf, AI tidak bisa merespon karena {response}. Set API key di Settings (18) → 7."
-        
-        # 12. FALLBACK
+                print(f"Maaf, AI tidak bisa merespon karena {response}. Set API key di Settings (18) → 7.")
+            return ""
+
+        # ========== FALLBACK AI ==========
         success, response = self.chat_with_ai(user_id, text)
         if success:
-            return response
+            print(response)
         else:
-            return f"Maaf, aku tidak mengerti perintah itu. Coba: 'install nmap', 'scan network', 'buat folder x', atau minta bantuan dengan 'bantu saya...'."
+            print(f"Maaf, aku tidak mengerti perintah itu. Coba: 'install nmap', 'scan network', 'buat folder x', atau minta bantuan dengan 'bantu saya...'.")
+        return ""
 
 # ========== Channel Adapters ==========
 class BaseChannelAdapter:
@@ -820,7 +834,10 @@ class TelegramAdapter(BaseChannelAdapter):
         user = update.effective_user
         if not self.is_admin(user.id): await update.message.reply_text(f"Akses ditolak. ID Anda: {user.id}"); return
         response = self.ai.process(str(user.id), update.message.text)
-        for i in range(0, len(response), 4000): await update.message.reply_text(response[i:i+4000])
+        if len(response) > 4000:
+            for i in range(0, len(response), 4000): await update.message.reply_text(response[i:i+4000])
+        else:
+            await update.message.reply_text(response)
     async def _run(self):
         from telegram.request import HTTPXRequest
         self.application = Application.builder().token(self.token).request(HTTPXRequest()).build()
@@ -1215,10 +1232,12 @@ def main():
         if choice == "2":
             clear()
             print(c("C")+"Chat mode (ketik 'exit' untuk kembali)")
+            print(c("d") + "✨ Semua perintah langsung dieksekusi dengan output streaming. Coba: 'install nmap', 'scan network', 'run ls -la'." + c("r"))
             while True:
                 inp = input(c("M")+"You: "+c("r")).strip()
                 if inp.lower() in ("exit","back"): break
-                if inp: print(c("G")+"Nexcorix: "+ai.process("local_user", inp)+c("r"))
+                if inp:
+                    ai.process("local_user", inp)
         elif choice == "8": show_channels_menu(ai)
         elif choice == "18": show_settings_menu(ai)
         elif choice == "20": print(c("G")+"Goodbye!"+c("r")); break
