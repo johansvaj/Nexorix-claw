@@ -1,0 +1,277 @@
+# modules/webui.py
+import threading
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
+import uvicorn
+
+class WebUI:
+    def __init__(self, message_bus=None, port=18888):
+        self.port = port
+        self.bus = message_bus
+        self.app = FastAPI(title="Nexcorix Claw WebUI")
+        self._server_thread = None
+        self.active_connections = []
+        self._setup_routes()
+
+    def _setup_routes(self):
+        @self.app.get("/")
+        async def root():
+            html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexcorix Claw · AI Agent</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .glass {
+            width: 100%;
+            max-width: 1000px;
+            height: 85vh;
+            background: rgba(18, 25, 45, 0.65);
+            backdrop-filter: blur(14px);
+            border-radius: 2rem;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            padding: 1rem 1.5rem;
+            background: rgba(10, 15, 30, 0.7);
+            border-bottom: 1px solid #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo { font-size: 2rem; filter: drop-shadow(0 0 6px #8b5cf6); }
+        .title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: linear-gradient(120deg, #a78bfa, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .badge {
+            background: #1e293b;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-left: auto;
+            font-family: monospace;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .message {
+            max-width: 80%;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .user { align-self: flex-end; }
+        .assistant { align-self: flex-start; }
+        .bubble {
+            padding: 0.75rem 1.25rem;
+            border-radius: 1.5rem;
+            background: #1e293b;
+            color: #e2e8f0;
+            word-wrap: break-word;
+            line-height: 1.45;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .user .bubble {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .assistant .bubble {
+            background: #0f172a;
+            border-bottom-left-radius: 0.25rem;
+            border-left: 3px solid #3b82f6;
+        }
+        .time {
+            font-size: 0.65rem;
+            margin-top: 0.3rem;
+            margin-left: 0.8rem;
+            color: #64748b;
+        }
+        .input-area {
+            padding: 1rem 1.5rem 1.5rem;
+            background: rgba(10, 15, 30, 0.7);
+            border-top: 1px solid #2d3748;
+            display: flex;
+            gap: 0.75rem;
+        }
+        .input-area input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 3rem;
+            padding: 0.8rem 1.2rem;
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-area input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+        }
+        .input-area button {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border: none;
+            border-radius: 3rem;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        .input-area button:hover { transform: scale(1.03); opacity: 0.9; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f172a;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            width: fit-content;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #60a5fa;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes pulse {
+            0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1); }
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body>
+<div class="glass">
+    <div class="header">
+        <span class="logo">🦂</span>
+        <span class="title">Nexcorix Claw</span>
+        <span class="badge">⚡ ready</span>
+    </div>
+    <div id="messages" class="messages"></div>
+    <div class="input-area">
+        <input type="text" id="messageInput" placeholder="Ketik perintah ..." autofocus>
+        <button id="sendBtn">➤</button>
+    </div>
+</div>
+<script>
+    const ws = new WebSocket(`ws://${window.location.host}/ws`);
+    const msgDiv = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+    const btn = document.getElementById('sendBtn');
+    let typingEl = null;
+
+    function addMsg(role, text) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.innerText = text;
+        const timeSpan = document.createElement('div');
+        timeSpan.className = 'time';
+        timeSpan.innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        div.appendChild(bubble);
+        div.appendChild(timeSpan);
+        msgDiv.appendChild(div);
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+
+    function showTyping() {
+        if (typingEl) return;
+        typingEl = document.createElement('div');
+        typingEl.className = 'message assistant';
+        typingEl.innerHTML = `<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:8px;color:#94a3b8;">mengetik</span></div>`;
+        msgDiv.appendChild(typingEl);
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+
+    function hideTyping() {
+        if (typingEl) { typingEl.remove(); typingEl = null; }
+    }
+
+    ws.onopen = () => {
+        addMsg('assistant', '🔮 Nexcorix Claw siap. Langsung kasih perintah, gas!');
+    };
+    ws.onmessage = (e) => {
+        hideTyping();
+        addMsg('assistant', e.data);
+    };
+    ws.onclose = () => addMsg('assistant', '⚠️ Koneksi terputus, refresh halaman.');
+
+    function send() {
+        const msg = input.value.trim();
+        if (!msg) return;
+        addMsg('user', msg);
+        ws.send(msg);
+        input.value = '';
+        showTyping();
+    }
+    btn.onclick = send;
+    input.onkeypress = (e) => { if (e.key === 'Enter') send(); };
+</script>
+</body>
+</html>"""
+            return HTMLResponse(content=html_content)
+
+        @self.app.websocket("/ws")
+        async def websocket_endpoint(websocket: WebSocket):
+            await websocket.accept()
+            self.active_connections.append(websocket)
+            try:
+                while True:
+                    data = await websocket.receive_text()
+                    if self.bus:
+                        # Integrasi dengan message bus nanti
+                        await websocket.send_text(f"✅ {data}")
+                    else:
+                        await websocket.send_text(f"Perintah: {data}")
+            except WebSocketDisconnect:
+                self.active_connections.remove(websocket)
+
+    def run(self):
+        uvicorn.run(self.app, host="0.0.0.0", port=self.port, log_level="warning")
+
+    def start_background(self):
+        if self._server_thread and self._server_thread.is_alive():
+            return
+        self._server_thread = threading.Thread(target=self.run, daemon=True)
+        self._server_thread.start()
