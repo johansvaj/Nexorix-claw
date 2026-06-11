@@ -1,0 +1,33 @@
+# modules/observability.py
+import json
+import time
+import os
+from datetime import datetime
+from typing import Dict, Any
+
+class TraceLogger:
+    def __init__(self, log_dir: str = "~/.nexcorix/logs"):
+        self.log_dir = os.path.expanduser(log_dir)
+        os.makedirs(self.log_dir, exist_ok=True)
+
+    def log(self, event: str, data: Dict[str, Any]):
+        entry = {
+            "timestamp": datetime.now().isoformat(),
+            "event": event,
+            "data": data
+        }
+        filename = f"{datetime.now().strftime('%Y%m%d')}.jsonl"
+        with open(os.path.join(self.log_dir, filename), "a") as f:
+            f.write(json.dumps(entry) + "\n")
+
+    def get_traces(self, limit: int = 50):
+        traces = []
+        files = sorted(os.listdir(self.log_dir), reverse=True)
+        for f in files:
+            if f.endswith(".jsonl"):
+                with open(os.path.join(self.log_dir, f)) as fp:
+                    for line in fp:
+                        traces.append(json.loads(line))
+                        if len(traces) >= limit:
+                            return traces
+        return traces
